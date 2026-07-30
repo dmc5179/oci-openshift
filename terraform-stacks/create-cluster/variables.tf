@@ -484,7 +484,7 @@ variable "compute_capacity_reservation" {
 }
 variable "use_autoscaling_operator" {
   type        = bool
-  description = "Enable the Oracle Cloud Autoscaler (beta). When enabled, node autoscaling will be managed by the Oracle Cloud Autoscaler Operator, allowing the cluster to automatically adjust the number of nodes based on resource demands."
+  description = "Enable the Oracle Cloud Autoscaler. When enabled, node autoscaling will be managed by the Oracle Cloud Autoscaler Operator, allowing the cluster to automatically adjust the number of nodes based on resource demands."
   default     = false
 }
 
@@ -508,6 +508,17 @@ variable "autoscaler_node_maximum_count" {
   default     = 5
   type        = number
   description = "The maximum number of autoscaled nodes in the cluster. The default value is 5."
+}
+
+variable "autoscaler_pool_identifier" {
+  default     = ""
+  type        = string
+  description = "Optional lowercase identifier appended to the CAPI cluster name when naming autoscaler node pool resources. Use up to 5 lowercase letters, numbers, or hyphens, such as bm01, vm01, or gpu01. The value must start and end with a lowercase letter or number."
+
+  validation {
+    condition     = var.autoscaler_pool_identifier == "" || can(regex("^[a-z0-9]([-a-z0-9]{0,3}[a-z0-9])?$", var.autoscaler_pool_identifier))
+    error_message = "The autoscaler_pool_identifier value must be empty or up to 5 characters containing lowercase letters, numbers, and hyphens, and must start and end with a lowercase letter or number."
+  }
 }
 
 variable "autoscaler_node_ocpus" {

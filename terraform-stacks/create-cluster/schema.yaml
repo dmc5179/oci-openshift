@@ -1,6 +1,6 @@
-title: OpenShift Cluster on OCI - v1.5.1
+title: OpenShift Cluster on OCI - v1.6.0
 description: A Terraform Stack for creating resources required for installing OpenShift on OCI
-schemaVersion: 1.5.1
+schemaVersion: 1.6.0
 version: "20250916"
 locale: "en"
 
@@ -53,13 +53,14 @@ variableGroups:
       - starting_fd_name_cp
     visible: create_openshift_instances
 
-  - title: "Autoscaling Configurations (Beta)"
+  - title: "Autoscaling Configurations"
     variables:
       - use_autoscaling_operator
       - autoscaler_node_shape
       - autoscaler_node_image_source_uri
       - autoscaler_node_minimum_count
       - autoscaler_node_maximum_count
+      - autoscaler_pool_identifier
       - autoscaler_node_ocpus
       - autoscaler_node_memory
       - cluster_network_cidr_block
@@ -657,8 +658,8 @@ variables:
 
   use_autoscaling_operator:
     type: boolean
-    title: Enable OCI OpenShift Autoscaler (Beta)
-    description: Select this option to enable OCI OpenShift Autoscaler (Beta). When enabled, node autoscaling will be managed by the OCI OpenShift Autoscaler Operator, allowing the cluster to automatically adjust the number of nodes based on resource demands.
+    title: Enable OCI OpenShift Autoscaler
+    description: Select this option to enable OCI OpenShift Autoscaler. When enabled, node autoscaling will be managed by the OCI OpenShift Autoscaler Operator, allowing the cluster to automatically adjust the number of nodes based on resource demands.
     default: false
 
   autoscaler_node_shape:
@@ -722,6 +723,19 @@ variables:
     required: true
     default: 5
     minimum: 0
+    visible:
+      eq:
+        - use_autoscaling_operator
+        - true
+
+  autoscaler_pool_identifier:
+    type: string
+    title: Autoscaler Pool Identifier
+    description: Optional lowercase identifier appended to the CAPI cluster name when naming autoscaler node pool resources. Use up to 5 lowercase letters, numbers, or hyphens, such as bm01, vm01, or gpu01. The value must start and end with a lowercase letter or number.
+    required: false
+    default: ""
+    maxLength: 5
+    pattern: "^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?$"
     visible:
       eq:
         - use_autoscaling_operator
