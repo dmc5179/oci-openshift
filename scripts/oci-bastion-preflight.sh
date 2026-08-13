@@ -13,13 +13,10 @@ check() {
 }
 
 echo "Bastion preflight checks:"
-check "httpd installed"              "rpm -q httpd"
 check "tar installed"                "rpm -q tar"
 check "openshift-install-fips on PATH" "command -v openshift-install-fips"
 check "oc on PATH"                   "command -v oc"
-check "httpd running"                "systemctl is-active httpd"
-check "httpd enabled"                "systemctl is-enabled httpd"
-check "firewall allows http"         "firewall-cmd --query-service=http"
+check "terraform on PATH"            "command -v terraform"
 check "SELinux enforcing"            "getenforce | grep -q Enforcing"
 check "FIPS mode enabled"            "fips-mode-setup --check 2>&1 | grep -q enabled"
 
