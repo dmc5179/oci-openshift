@@ -1,0 +1,57 @@
+FROM registry.access.redhat.com/ubi9/ubi:latest AS base
+
+ARG TERRAFORM_VERSION=1.15.8
+ARG OC_VERSION=4.22
+ARG OCI_CLI_VERSION=3.90.1
+
+RUN dnf -y install \
+        bash \
+        curl \
+        gzip \
+        jq \
+        make \
+        openssh-clients \
+        python3 \
+        python3-pip \
+        tar \
+        unzip \
+        zip \
+    && dnf clean all
+
+RUN curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
+        -o /tmp/terraform.zip \
+    && unzip /tmp/terraform.zip -d /usr/local/bin/ \
+    && chmod +x /usr/local/bin/terraform \
+    && rm -f /tmp/terraform.zip
+
+RUN pip3 install --no-cache-dir oci-cli==${OCI_CLI_VERSION}
+
+RUN curl -fsSL "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${OC_VERSION}/openshift-client-linux.tar.gz" \
+        -o /tmp/oc.tar.gz \
+    && tar -xzf /tmp/oc.tar.gz -C /usr/local/bin/ oc kubectl \
+    && chmod +x /usr/local/bin/oc /usr/local/bin/kubectl \
+    && rm -f /tmp/oc.tar.gz
+
+COPY . /opt/oci-openshift
+
+WORKDIR /opt/oci-openshift
+
+RUN mkdir -p /opt/oci-openshift/.terraform-plugin-cache
+
+ENV TF_PLUGIN_CACHE_DIR=/opt/oci-openshift/.terraform-plugin-cache
+
+RUN for stack in terraform-stacks/create-cluster \
+                 terraform-stacks/add-nodes \
+                 terraform-stacks/create-instance-role-tags \
+                 terraform-stacks/create-resource-attribution-tags \
+                 terraform-stacks/create-autoscaler-operator; do \
+        echo "==> terraform init: ${stack}" \
+        && terraform -chdir="${stack}" init -backend=false \
+        || exit 1; \
+    done
+
+RUN terraform version \
+    && oci --version \
+    && oc version --client
+
+ENTRYPOINT ["/bin/bash"]
