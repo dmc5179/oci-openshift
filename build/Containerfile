@@ -4,54 +4,63 @@ ARG TERRAFORM_VERSION=1.15.8
 ARG OC_VERSION=4.22
 ARG OCI_CLI_VERSION=3.90.1
 
-RUN dnf -y install \
-        bash \
-        curl \
-        gzip \
-        jq \
-        make \
-        openssh-clients \
-        python3 \
-        python3-pip \
-        tar \
-        unzip \
-        zip \
-    && dnf clean all
+ENV TF_PLUGIN_CACHE_DIR=/opt/oci-openshift/.terraform-plugin-cache
+ENV TF_LOG_PATH=/opt/oci-openshift/terraform-logs/terraform.log
 
-RUN curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
-        -o /tmp/terraform.zip \
-    && unzip /tmp/terraform.zip -d /usr/local/bin/ \
-    && chmod +x /usr/local/bin/terraform \
-    && rm -f /tmp/terraform.zip
+# TODO: Add oc-mirror binary
 
-RUN pip3 install --no-cache-dir oci-cli==${OCI_CLI_VERSION}
-
-RUN curl -fsSL "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${OC_VERSION}/openshift-client-linux.tar.gz" \
+RUN dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
+    dnf install -y --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms --enablerepo=ubi-9-codeready-builder-rpms --enablerepo=hashicorp \
+           bash \
+           bash-completion \
+           git \
+           gzip \
+           jq \
+           make \
+           openssh-clients \
+           python3 \
+           python3-pip \
+           tar \
+           terraform \
+           unzip \
+           zip && \
+    dnf clean all && \
+    rm -rf /var/cache/yum /var/cache/dnf && \
+    python3 -m pip install --upgrade --no-cache-dir pip && \
+    curl -fsSL "https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable-${OC_VERSION}/openshift-client-linux.tar.gz" \
         -o /tmp/oc.tar.gz \
     && tar -xzf /tmp/oc.tar.gz -C /usr/local/bin/ oc kubectl \
     && chmod +x /usr/local/bin/oc /usr/local/bin/kubectl \
-    && rm -f /tmp/oc.tar.gz
+    && rm -f /tmp/oc.tar.gz \
+    && groupadd -g 1001 appuser \
+    && useradd -u 1001 -g appuser -m -s /bin/bash appuser \
+    && mkdir /opt/oci-openshift \
+    && chown 1001:1001 /opt/oci-openshift
+
+ENV HOME=/home/appuser
+
+USER 1001
 
 COPY . /opt/oci-openshift
 
 WORKDIR /opt/oci-openshift
 
-RUN mkdir -p /opt/oci-openshift/.terraform-plugin-cache
-
-ENV TF_PLUGIN_CACHE_DIR=/opt/oci-openshift/.terraform-plugin-cache
-
-RUN for stack in terraform-stacks/create-cluster \
-                 terraform-stacks/add-nodes \
-                 terraform-stacks/create-instance-role-tags \
-                 terraform-stacks/create-resource-attribution-tags \
-                 terraform-stacks/create-autoscaler-operator; do \
+RUN pip3 install --user --no-cache-dir oci-cli==${OCI_CLI_VERSION} \
+    && bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults \
+    && mkdir /opt/oci-openshift/.terraform-plugin-cache /opt/oci-openshift/terraform-logs \
+    && git clone https://github.com/dmc5179/oci-openshift.git && \
+    for stack in oci-openshift/terraform-stacks/create-cluster \
+                 oci-openshift/terraform-stacks/add-nodes \
+                 oci-openshift/terraform-stacks/create-instance-role-tags \
+                 oci-openshift/terraform-stacks/create-resource-attribution-tags \
+                 oci-openshift/terraform-stacks/create-autoscaler-operator; do \
         echo "==> terraform init: ${stack}" \
         && terraform -chdir="${stack}" init -backend=false \
         || exit 1; \
     done
 
-RUN terraform version \
-    && oci --version \
-    && oc version --client
+#RUN terraform version \
+#    && oci --version \
+#    && oc version --client
 
 ENTRYPOINT ["/bin/bash"]
