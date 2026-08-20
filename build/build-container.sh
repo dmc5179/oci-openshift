@@ -22,7 +22,7 @@ echo "  OCI CLI:    ${OCI_CLI_VERSION}"
 echo "  Engine:     ${CONTAINER_ENGINE}"
 echo ""
 
-"$CONTAINER_ENGINE" build \
+"$CONTAINER_ENGINE" build --squash-all \
   --build-arg TERRAFORM_VERSION="${TERRAFORM_VERSION}" \
   --build-arg OC_VERSION="${OC_VERSION}" \
   --build-arg OCI_CLI_VERSION="${OCI_CLI_VERSION}" \
