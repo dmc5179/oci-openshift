@@ -7,10 +7,8 @@ ARG OCI_CLI_VERSION=3.90.1
 ENV TF_PLUGIN_CACHE_DIR=/opt/oci-openshift/.terraform-plugin-cache
 ENV TF_LOG_PATH=/opt/oci-openshift/terraform-logs/terraform.log
 
-# TODO: Add oc-mirror binary
-
-RUN dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
-    dnf install -y --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms --enablerepo=ubi-9-codeready-builder-rpms --enablerepo=hashicorp \
+RUN dnf --disableplugin=subscription-manager config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo && \
+    dnf --disableplugin=subscription-manager install -y \
            bash \
            bash-completion \
            git \
@@ -58,9 +56,5 @@ RUN pip3 install --user --no-cache-dir oci-cli==${OCI_CLI_VERSION} \
         && terraform -chdir="${stack}" init -backend=false \
         || exit 1; \
     done
-
-#RUN terraform version \
-#    && oci --version \
-#    && oc version --client
 
 ENTRYPOINT ["/bin/bash"]
