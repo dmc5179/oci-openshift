@@ -49,13 +49,17 @@ Use `CONTAINER_ENGINE=docker` if podman is not available.
 ## Run
 
 ```bash
-podman run -it --rm \
-  -v ${HOME}/.oci:/root/.oci:ro \
-  -v ${HOME}/.ssh:/root/.ssh:ro \
-  -v /path/to/openshift-on-oci.tfvars:/opt/oci-openshift/openshift-on-oci.tfvars:ro \
-  -v /path/to/pull-secret.json:/opt/oci-openshift/pull-secret.json:ro \
-  oci-openshift-deployer:latest
+podman run -d --rm --name oci-terraform \
+  --entrypoint '["bash", "-c", "sleep infinity"]' \
+  -v /etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem:/etc/pki/tls/certs/ca-bundle.crt:ro,z \
+  -v ${HOME}/.oci:/home/appuser/.oci:ro,Z,U \
+  -v ${HOME}/.ssh:/home/appuser/.ssh:ro,Z,U \
+  -v /home/danclark/workspace/openshift-on-oci/oci-openshift-mine/openshift-on-oci.tfvars:/opt/oci-openshift/openshift-on-oci.tfvars:ro,Z,U \
+  -v /home/danclark/Downloads/pull-secret:/opt/oci-openshift/pull-secret.json:ro,Z,U \
+  quay.io/danclark/oci-openshift-deployer:latest
 ```
+
+
 
 ### Volume mounts
 
