@@ -47,11 +47,12 @@ RUN pip3 install --user --no-cache-dir oci-cli==${OCI_CLI_VERSION} \
     && bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults \
     && mkdir /opt/oci-openshift/.terraform-plugin-cache /opt/oci-openshift/terraform-logs \
     && git clone https://github.com/dmc5179/oci-openshift.git && \
-    for stack in oci-openshift/terraform-stacks/create-cluster \
-                 oci-openshift/terraform-stacks/add-nodes \
-                 oci-openshift/terraform-stacks/create-instance-role-tags \
-                 oci-openshift/terraform-stacks/create-resource-attribution-tags \
-                 oci-openshift/terraform-stacks/create-autoscaler-operator; do \
+    cd oci-openshift && git checkout -b disconnected --track remotes/origin/disconnected && \
+    for stack in terraform-stacks/create-cluster \
+                 terraform-stacks/add-nodes \
+                 terraform-stacks/create-instance-role-tags \
+                 terraform-stacks/create-resource-attribution-tags \
+                 terraform-stacks/create-autoscaler-operator; do \
         echo "==> terraform init: ${stack}" \
         && terraform -chdir="${stack}" init -backend=false \
         || exit 1; \
