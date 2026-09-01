@@ -3,6 +3,8 @@ FROM registry.access.redhat.com/ubi9/ubi:latest AS base
 ARG TERRAFORM_VERSION=1.15.8
 ARG OC_VERSION=4.22
 ARG OCI_CLI_VERSION=3.90.1
+ARG GIT_REPO_URL=https://github.com/oracle-quickstart/oci-openshift.git
+ARG GIT_REPO_BRANCH=main
 
 ENV TF_PLUGIN_CACHE_DIR=/opt/oci-openshift/.terraform-plugin-cache
 ENV TF_LOG_PATH=/opt/oci-openshift/terraform-logs/terraform.log
@@ -46,8 +48,8 @@ WORKDIR /opt/oci-openshift
 RUN pip3 install --user --no-cache-dir oci-cli==${OCI_CLI_VERSION} \
     && bash -c "$(curl -L https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh)" -- --accept-all-defaults \
     && mkdir /opt/oci-openshift/.terraform-plugin-cache /opt/oci-openshift/terraform-logs \
-    && git clone https://github.com/dmc5179/oci-openshift.git && \
-    cd oci-openshift && git checkout -b disconnected --track remotes/origin/disconnected && \
+    && git clone --branch "${GIT_REPO_BRANCH}" "${GIT_REPO_URL}" && \
+    cd oci-openshift && \
     for stack in terraform-stacks/create-cluster \
                  terraform-stacks/add-nodes \
                  terraform-stacks/create-instance-role-tags \
