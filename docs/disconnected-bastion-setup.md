@@ -16,19 +16,18 @@ is a two-pass Terraform apply with a manual ISO creation step in between:
      manifests as Terraform outputs
 
 2. **Create the agent ISO** on the bastion (between the two applies)
-   - Write the Terraform outputs to disk
+   - Write the Terraform outputs to disk (or use `generate-ocp-artifacts.sh`)
    - Run `openshift-install-fips agent create image` to produce `agent.x86_64.iso`
-   - Upload the ISO to OCI Object Storage
-   - Create a Pre-Authenticated Request (PAR) URL for the ISO
+     and `boot-artifacts/agent.x86_64-rootfs.img`
 
 3. **Second `terraform apply`** with `create_openshift_instances = true`
-   - Set `openshift_image_source_uri` to the PAR URL of the agent ISO
-   - OCI imports the ISO as a custom image (UEFI boot, QCOW2 type)
-   - Compute instances boot from this custom image
+   - Set `iso_file_path` and `rootfs_file_path` to the local paths of the ISO and rootfs
+   - Terraform uploads both to Object Storage, creates PARs, imports the ISO as
+     a custom image (UEFI boot, QCOW2 type), and launches compute instances
    - The agent installer embedded in the ISO orchestrates the cluster install
 
 All configuration (install-config, agent-config, custom manifests) is baked into
-the ISO. No httpd, no rootfs serving, no `bootArtifactsBaseURL` needed.
+the ISO. No httpd, no manual PAR handling, no separate upload scripts needed.
 
 ## Terraform configuration
 
@@ -41,11 +40,12 @@ enable_fips                  = true
 create_openshift_instances   = false   # first pass
 ```
 
-After creating the ISO and uploading it, update for the second pass:
+After creating the ISO, update for the second pass:
 
 ```hcl
 create_openshift_instances   = true
-openshift_image_source_uri   = "<PAR URL to agent.x86_64.iso>"
+iso_file_path                = "/home/cloud-user/<cluster>-agentBasedInstallation/agent.x86_64.iso"
+rootfs_file_path             = "/home/cloud-user/<cluster>-agentBasedInstallation/boot-artifacts/agent.x86_64-rootfs.img"
 ```
 
 ## Bastion prerequisites
@@ -115,16 +115,14 @@ cp -R ~/<cluster>-agentBasedInstallation ~/<cluster>-agentBasedInstallation-back
 cd ~/<cluster>-agentBasedInstallation
 openshift-install-fips agent create image
 
-# 8. Upload ISO to OCI Object Storage and create a PAR URL
-# (use OCI Console or oci-cli)
-
-# 9. Second terraform apply (create instances from the ISO)
-# Update tfvars: create_openshift_instances = true
-#                openshift_image_source_uri = "<PAR URL>"
+# 8. Second terraform apply (create instances — uploads ISO + rootfs automatically)
 cd oci-openshift-mine/terraform-stacks/create-cluster
-terraform apply -var-file=../../openshift-on-oci.tfvars
+terraform apply -var-file=../../openshift-on-oci.tfvars \
+  -var='create_openshift_instances=true' \
+  -var="iso_file_path=$HOME/<cluster>-agentBasedInstallation/agent.x86_64.iso" \
+  -var="rootfs_file_path=$HOME/<cluster>-agentBasedInstallation/boot-artifacts/agent.x86_64-rootfs.img"
 
-# 10. Monitor installation
+# 9. Monitor installation
 openshift-install-fips agent wait-for install-complete \
   --dir ~/<cluster>-agentBasedInstallation
 ```

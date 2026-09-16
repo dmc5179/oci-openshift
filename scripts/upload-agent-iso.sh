@@ -3,7 +3,12 @@ set -euo pipefail
 
 # Uploads the agent ISO to OCI Object Storage and creates a PAR URL.
 #
-# Run AFTER 'openshift-install agent create image'.
+# NOTE: For disconnected installs (is_disconnected_installation=true), this
+# script is NOT needed — terraform handles ISO upload and PAR creation via the
+# boot_artifacts module. Set iso_file_path in your tfvars instead.
+#
+# This script is for connected installs where the boot_artifacts module is not
+# used. Run AFTER 'openshift-install agent create image'.
 # The PAR URL printed at the end is the value for openshift_image_source_uri
 # in terraform pass 2.
 #
