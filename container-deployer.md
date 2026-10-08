@@ -108,5 +108,5 @@ registry for air-gapped installs:
 | `registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.12.0` | OCI CSI driver |
 | `registry.k8s.io/sig-storage/csi-snapshotter:v6.3.0` | OCI CSI driver |
 | `registry.k8s.io/sig-storage/snapshot-controller:v6.3.0` | OCI CSI driver |
-| `quay.io/openshift/origin-cli:4.20` | CCM init container |
+| `quay.io/openshift/origin-cli:4.22` | CCM init container |
 | `$OCA_IMAGE_URL` (from OCIR) | Oracle Cloud Agent (optional, not available in Gov Cloud) |
