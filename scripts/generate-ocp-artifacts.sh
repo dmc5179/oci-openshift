@@ -51,6 +51,7 @@ REQUIRED_MANIFESTS=(
 # Emitted only under some configurations. Skipped without error when null.
 OPTIONAL_MANIFESTS=(
   manifest_image_tag_mirror_set
+  manifest_oci_custom_ca
 )
 
 failed=()

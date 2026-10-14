@@ -136,6 +136,15 @@ spec:
               readOnly: true
             - mountPath: /var/run/shared-tmpfs
               name: shared-tmpfs
+            %{~ if custom_ca_enabled ~}
+            # subPath so only this file is added. Mounting the directory, or
+            # the extracted bundle itself, replaces the image's own trust
+            # store and drops every public root.
+            - name: custom-ca
+              mountPath: /etc/pki/tls/certs/oci-custom-ca.crt
+              subPath: oci-custom-ca.crt
+              readOnly: true
+            %{~ endif ~}
       volumes:
         - name: config
           secret:
@@ -145,6 +154,11 @@ spec:
             path: /etc/kubernetes
         - name: shared-tmpfs
           emptyDir: {}
+        %{~ if custom_ca_enabled ~}
+        - name: custom-ca
+          configMap:
+            name: oci-custom-ca
+        %{~ endif ~}
       dnsPolicy: ClusterFirst
       hostNetwork: true
       imagePullSecrets:
@@ -332,6 +346,15 @@ spec:
             - mountPath: /sbin/mount
               name: fss-driver-mounts
               subPath: mount
+            %{~ if custom_ca_enabled ~}
+            # subPath so only this file is added. Mounting the directory, or
+            # the extracted bundle itself, replaces the image's own trust
+            # store and drops every public root.
+            - mountPath: /etc/pki/tls/certs/oci-custom-ca.crt
+              name: custom-ca
+              subPath: oci-custom-ca.crt
+              readOnly: true
+            %{~ endif ~}
         - name: csi-node-registrar
           args:
             - --csi-address=/csi/csi.sock
@@ -416,6 +439,11 @@ spec:
             name: oci-fss-csi
             defaultMode: 0755
           name: fss-driver-mounts
+        %{~ if custom_ca_enabled ~}
+        - configMap:
+            name: oci-custom-ca
+          name: custom-ca
+        %{~ endif ~}
   updateStrategy:
     rollingUpdate:
       maxUnavailable: 1

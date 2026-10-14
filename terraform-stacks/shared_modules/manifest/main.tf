@@ -111,6 +111,11 @@ output "autoscaling_manifest" {
   }
 }
 
+output "manifest_oci_custom_ca" {
+  description = "ConfigMaps carrying additional_trust_bundle into the oci-cloud-controller-manager and oci-csi namespaces, so the Oracle-image containers can verify TLS to the OCI API. Null when additional_trust_bundle is unset."
+  value       = var.additional_trust_bundle == "" ? null : trimspace(local.oci_custom_ca_configmaps)
+}
+
 output "manifest_image_tag_mirror_set" {
   description = "ImageTagMirrorSet redirecting tag-based image pulls to the private registry. Write to openshift/99-image-tag-mirror-set.yml before generating the agent ISO. Null when private_registry is unset."
   value       = var.private_registry == "" ? null : trimspace(local.image_tag_mirror_set)

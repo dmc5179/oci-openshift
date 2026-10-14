@@ -236,6 +236,11 @@ spec:
         - name: kubernetes
           hostPath:
             path: /etc/kubernetes
+        %{~ if custom_ca_enabled ~}
+        - name: custom-ca
+          configMap:
+            name: oci-custom-ca
+        %{~ endif ~}
       containers:
         - name: oci-cloud-controller-manager
           image: ${oci_image_source}
@@ -267,4 +272,13 @@ spec:
             - name: kubernetes
               mountPath: /etc/kubernetes
               readOnly: true
+            %{~ if custom_ca_enabled ~}
+            # subPath so only this file is added. Mounting the directory, or
+            # the extracted bundle itself, replaces the image's own trust
+            # store and drops every public root.
+            - name: custom-ca
+              mountPath: /etc/pki/tls/certs/oci-custom-ca.crt
+              subPath: oci-custom-ca.crt
+              readOnly: true
+            %{~ endif ~}
 ---

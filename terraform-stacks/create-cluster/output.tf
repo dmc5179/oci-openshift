@@ -79,6 +79,10 @@ output "manifest_image_tag_mirror_set" {
   value = module.manifests.manifest_image_tag_mirror_set
 }
 
+output "manifest_oci_custom_ca" {
+  value = module.manifests.manifest_oci_custom_ca
+}
+
 output "etc_hosts_entry" {
   value = <<EOT
 ${module.load_balancer.op_lb_openshift_api_lb_ip_addr}  api.${var.cluster_name}.${var.zone_dns}
