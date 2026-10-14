@@ -1,12 +1,19 @@
 locals {
-  default_oci_driver_image = "ghcr.io/oracle/cloud-provider-oci:v1.34.0"
+  # v1.34.0 deliberately points at a personal namespace rather than
+  # ghcr.io/oracle. Oracle engineering confirmed on PR #88 that the official
+  # v1.34.0 build is missing a required fix, and that this image must be used
+  # until a corrected release ships. Do not "correct" this to ghcr.io/oracle
+  # without checking with Oracle first — doing so caused a disconnected
+  # cluster to run a CCM without the fix. Whatever is mirrored for an
+  # air-gapped install must match whichever image is selected here.
+  default_oci_driver_image = "ghcr.io/nikhisin3001/cloud-provider-oci:v1.34.0"
   is_autoscaler_bm_shape   = can(regex("^BM\\..*$", var.autoscaler_node_shape))
   cert_manager_version     = "v1.16.3"
 
   oci_image_sources = {
     "v1.33.1"     = "ghcr.io/oracle/cloud-provider-oci:v1.33.1"
     "v1.32.2"     = "ghcr.io/oracle/cloud-provider-oci:v1.32.2"
-    "v1.34.0"     = "ghcr.io/oracle/cloud-provider-oci:v1.34.0"
+    "v1.34.0"     = "ghcr.io/nikhisin3001/cloud-provider-oci:v1.34.0"
     "v1.32.0-UHP" = "ghcr.io/dfoster-oracle/cloud-provider-oci-amd64:v1.32.0-UHP-LA"
   }
 
