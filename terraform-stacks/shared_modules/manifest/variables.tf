@@ -215,3 +215,26 @@ variable "capoci_version" {
 variable "autoscaler_node_image_id" {
   type = string
 }
+
+# Autoscaler artifact sources. Empty means the provider-installer Job fetches
+# from github.com, which only works on a connected cluster. Point these at an
+# internal source for an air-gapped install.
+variable "provider_artifacts_base_url" {
+  type    = string
+  default = ""
+}
+
+variable "cluster_autoscaler_repository_url" {
+  type    = string
+  default = "https://kubernetes.github.io/autoscaler"
+}
+
+variable "provider_installer_image" {
+  type    = string
+  default = "quay.io/openshift/origin-cli:4.22"
+}
+
+variable "cert_manager_version" {
+  type    = string
+  default = "v1.16.3"
+}

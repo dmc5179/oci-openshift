@@ -577,3 +577,89 @@ variable "autoscaler_node_image_source_uri" {
   description = "<strong><em>(Required)</em></strong> - The OCI Object Storage URL for the Autoscaler node image. Before provisioning resources through this Resource Manager stack, users should upload the OpenShift image to OCI Object Storage, create a Pre-Authenticated Request (PAR) URL, and paste the URL to this block."
   default     = ""
 }
+
+# -----------------------------------------------------------------------------
+# Autoscaler artifacts (disconnected only)
+# -----------------------------------------------------------------------------
+# The autoscaler's provider-installer Job fetches three component manifests and
+# a Helm chart from github.com, which an air-gapped cluster cannot reach. Stage
+# them on the machine running terraform and it will upload them to Object
+# Storage and mint a pre-authenticated request the Job can read.
+#
+# Leave empty for a connected install; the Job then fetches from github.com as
+# before. Download on a connected host:
+#   cert-manager-<ver>.yaml  github.com/cert-manager/cert-manager/releases/download/<ver>/cert-manager.yaml
+#   cluster-api-<ver>.yaml   github.com/kubernetes-sigs/cluster-api/releases/download/<ver>/core-components.yaml
+#   cluster-api-provider-oci-<ver>.yaml
+#                            github.com/oracle/cluster-api-provider-oci/releases/download/<ver>/infrastructure-components.yaml
+#   index.yaml               kubernetes.github.io/autoscaler/index.yaml  (chart URLs must be relative)
+#   cluster-autoscaler-<chart>.tgz
+
+variable "autoscaler_cert_manager_manifest_path" {
+  type        = string
+  description = "Local path to the cert-manager manifest. Setting this enables Object Storage hosting of the autoscaler artifacts."
+  default     = ""
+}
+
+variable "autoscaler_capi_manifest_path" {
+  type        = string
+  description = "Local path to the Cluster API core-components manifest."
+  default     = ""
+}
+
+variable "autoscaler_capoci_manifest_path" {
+  type        = string
+  description = "Local path to the CAPI Provider OCI infrastructure-components manifest."
+  default     = ""
+}
+
+variable "autoscaler_helm_index_path" {
+  type        = string
+  description = "Local path to the Helm repository index.yaml. Chart URLs inside it must be relative, or absolute against the generated PAR."
+  default     = ""
+}
+
+variable "autoscaler_helm_chart_path" {
+  type        = string
+  description = "Local path to the cluster-autoscaler chart tarball."
+  default     = ""
+}
+
+variable "autoscaler_chart_version" {
+  type        = string
+  description = "cluster-autoscaler Helm chart version. Used to name the staged tarball. Chart 9.40.0 has appVersion 1.31.0 and renders registry.k8s.io/autoscaling/cluster-autoscaler:v1.31.0, which must be mirrored."
+  default     = "9.40.0"
+}
+
+variable "autoscaler_artifacts_par_expiry_hours" {
+  type        = number
+  description = "Hours until the autoscaler artifact PAR expires. Longer than the boot artifact default because the operator may re-run the installer Job on upgrade or reconcile well after install; once it lapses those fetches fail."
+  default     = 8760
+}
+
+variable "provider_installer_image" {
+  type        = string
+  description = "Image for the autoscaler provider-installer Job. Must be mirrored for disconnected installs."
+  default     = "quay.io/openshift/origin-cli:4.22"
+}
+
+# Component versions, defined once here and passed to both the manifest module
+# (which builds the fetch URLs) and the autoscaler_artifacts module (which
+# names the staged objects), so the two cannot drift apart.
+variable "cert_manager_version" {
+  type        = string
+  description = "cert-manager version installed by the autoscaler provider-installer Job."
+  default     = "v1.16.3"
+}
+
+variable "capi_version" {
+  type        = string
+  description = "Cluster API version installed by the autoscaler provider-installer Job."
+  default     = "v1.14.0"
+}
+
+variable "capoci_version" {
+  type        = string
+  description = "Cluster API Provider OCI version installed by the autoscaler provider-installer Job."
+  default     = "v0.24.0"
+}

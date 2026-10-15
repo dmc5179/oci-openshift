@@ -103,3 +103,13 @@ output "install_config" {
 output "stack_version" {
   value = local.stack_version
 }
+
+output "autoscaler_artifacts_base_url" {
+  description = "PAR base URL serving the autoscaler component manifests. Null unless the artifacts were staged."
+  value       = var.use_autoscaling_operator && var.autoscaler_cert_manager_manifest_path != "" ? module.autoscaler_artifacts[0].provider_artifacts_base_url : null
+}
+
+output "autoscaler_artifacts_par_expires" {
+  description = "When the autoscaler artifact PAR stops working. The operator may re-run the installer Job long after install; refresh before this passes."
+  value       = var.use_autoscaling_operator && var.autoscaler_cert_manager_manifest_path != "" ? module.autoscaler_artifacts[0].par_expires : null
+}

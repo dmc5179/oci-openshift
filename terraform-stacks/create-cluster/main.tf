@@ -14,8 +14,8 @@ terraform {
 
 # Home Region Terraform Provider
 provider "oci" {
-  alias  = "home"
-  region = local.home_region
+  alias                                            = "home"
+  region                                           = local.home_region
   realm_specific_service_endpoint_template_enabled = var.enable_realm_specific_endpoints
 }
 
@@ -242,6 +242,34 @@ module "boot_artifacts" {
   defined_tags     = module.resource_attribution_tags.openshift_resource_attribution_tag
 }
 
+# Keyed off the cert-manager path rather than is_disconnected_installation: a
+# disconnected cluster without the autoscaler needs no bucket, and staging the
+# artifacts is the deliberate act that signals intent.
+module "autoscaler_artifacts" {
+  source = "./shared_modules/autoscaler_artifacts"
+  count  = var.use_autoscaling_operator && var.autoscaler_cert_manager_manifest_path != "" ? 1 : 0
+
+  depends_on = [module.tags.wait_for_tag_consistency]
+
+  compartment_ocid = var.compartment_ocid
+  cluster_name     = var.cluster_name
+  region           = var.region
+  realm_domain     = local.realm_domain
+  par_expiry_hours = var.autoscaler_artifacts_par_expiry_hours
+  defined_tags     = module.resource_attribution_tags.openshift_resource_attribution_tag
+
+  cert_manager_version             = var.cert_manager_version
+  capi_version                     = var.capi_version
+  capoci_version                   = var.capoci_version
+  cluster_autoscaler_chart_version = var.autoscaler_chart_version
+
+  cert_manager_manifest_path = var.autoscaler_cert_manager_manifest_path
+  capi_manifest_path         = var.autoscaler_capi_manifest_path
+  capoci_manifest_path       = var.autoscaler_capoci_manifest_path
+  helm_index_path            = var.autoscaler_helm_index_path
+  helm_chart_path            = var.autoscaler_helm_chart_path
+}
+
 module "ocir" {
   source = "./shared_modules/ocir"
   count  = var.use_oracle_cloud_agent ? 1 : 0
@@ -261,14 +289,14 @@ module "manifests" {
   region_metadata                 = module.meta.region_metadata
   enable_realm_specific_endpoints = var.enable_realm_specific_endpoints
 
-  redhat_pull_secret           = var.redhat_pull_secret
-  enable_fips                  = var.enable_fips
-  private_registry             = var.private_registry
-  additional_trust_bundle      = var.additional_trust_bundle
-  set_proxy                    = var.set_proxy
-  http_proxy                   = var.http_proxy
-  https_proxy                  = var.https_proxy
-  no_proxy                     = var.no_proxy
+  redhat_pull_secret      = var.redhat_pull_secret
+  enable_fips             = var.enable_fips
+  private_registry        = var.private_registry
+  additional_trust_bundle = var.additional_trust_bundle
+  set_proxy               = var.set_proxy
+  http_proxy              = var.http_proxy
+  https_proxy             = var.https_proxy
+  no_proxy                = var.no_proxy
 
   // Depedency on networks
   op_vcn_openshift_vcn  = module.network.op_vcn_openshift_vcn
@@ -319,6 +347,18 @@ module "manifests" {
   cluster_network_cidr_block        = var.cluster_network_cidr_block
   service_network_cidr_block        = var.service_network_cidr_block
   autoscaler_node_image_id          = module.image.op_image_openshift_autoscaling_image
+
+  // Component versions, shared with the autoscaler_artifacts module so the
+  // URLs the installer Job builds match the objects that were staged.
+  cert_manager_version = var.cert_manager_version
+  capi_version         = var.capi_version
+  capoci_version       = var.capoci_version
+
+  // Where the installer Job fetches the component manifests and Helm chart.
+  // Empty base URL falls back to github.com, which only works connected.
+  provider_artifacts_base_url       = var.use_autoscaling_operator && var.autoscaler_cert_manager_manifest_path != "" ? module.autoscaler_artifacts[0].provider_artifacts_base_url : ""
+  cluster_autoscaler_repository_url = var.use_autoscaling_operator && var.autoscaler_cert_manager_manifest_path != "" ? module.autoscaler_artifacts[0].cluster_autoscaler_repository_url : "https://kubernetes.github.io/autoscaler"
+  provider_installer_image          = var.provider_installer_image
 }
 
 module "resource_attribution_tags" {
