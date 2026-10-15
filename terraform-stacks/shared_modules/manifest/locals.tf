@@ -22,6 +22,9 @@ locals {
   # ImageTagMirrorSet CR to resolve against a disconnected mirror.
   oci_driver_repo = split(":", lookup(local.oci_image_sources, var.oci_driver_version, local.default_oci_driver_image))[0]
 
+  # Anything mirrored by tag needs an entry here, or the pull is not
+  # redirected and fails in an enclave despite the image being present in the
+  # mirror. Keep in step with imageset-config.yaml.
   tag_mirrored_repos = concat([local.oci_driver_repo], [
     "ghcr.io/oracle-samples/openshift-oracle-capi-autoscaling",
     "quay.io/openshift/origin-cli",
@@ -31,6 +34,23 @@ locals {
     "registry.k8s.io/sig-storage/csi-node-driver-registrar",
     "registry.k8s.io/sig-storage/csi-snapshotter",
     "registry.k8s.io/sig-storage/snapshot-controller",
+
+    # Pulled in by the autoscaler's provider-installer Job and by the
+    # cluster-autoscaler Helm chart it installs.
+    "quay.io/jetstack/cert-manager-controller",
+    "quay.io/jetstack/cert-manager-cainjector",
+    "quay.io/jetstack/cert-manager-webhook",
+    "registry.k8s.io/cluster-api/cluster-api-controller",
+    "ghcr.io/oracle/cluster-api-oci-controller",
+    "registry.k8s.io/autoscaling/cluster-autoscaler",
+
+    # Troubleshooting images. Nothing pulls these during install, but
+    # 'oc debug node/...' and must-gather do, and they fail in an enclave
+    # without redirection.
+    "registry.redhat.io/rhel9/support-tools",
+    "registry.redhat.io/openshift4/ose-must-gather",
+    "registry.access.redhat.com/ubi9/ubi",
+    "registry.access.redhat.com/ubi8/ubi",
   ])
 
   image_tag_mirror_entries = [
