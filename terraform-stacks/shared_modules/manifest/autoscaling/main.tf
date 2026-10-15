@@ -3,7 +3,25 @@ terraform {
 }
 
 locals {
-  cert_manager_version = "v1.16.3"
+  cert_manager_version = var.cert_manager_version
+
+  # Where the provider-installer Job fetches the component manifests. Falls
+  # back to github.com so connected installs are unchanged. Duplicated from
+  # the parent manifest module because this stack carries its own copy of the
+  # installer Job; see the note in the parent.
+  provider_artifacts_base = trimsuffix(trimspace(var.provider_artifacts_base_url), "/")
+
+  cert_manager_manifest_url = local.provider_artifacts_base != "" ? (
+    "${local.provider_artifacts_base}/cert-manager-${var.cert_manager_version}.yaml"
+  ) : "https://github.com/cert-manager/cert-manager/releases/download/${var.cert_manager_version}/cert-manager.yaml"
+
+  capi_manifest_url = local.provider_artifacts_base != "" ? (
+    "${local.provider_artifacts_base}/cluster-api-${var.capi_version}.yaml"
+  ) : "https://github.com/kubernetes-sigs/cluster-api/releases/download/${var.capi_version}/core-components.yaml"
+
+  capoci_manifest_url = local.provider_artifacts_base != "" ? (
+    "${local.provider_artifacts_base}/cluster-api-provider-oci-${var.capoci_version}.yaml"
+  ) : "https://github.com/oracle/cluster-api-provider-oci/releases/download/${var.capoci_version}/infrastructure-components.yaml"
 
   autoscaling_operator_configmap = <<EOT
 # 10-autoscaling-operator-configs.yaml
@@ -16,6 +34,9 @@ data:
   CAPI_VERSION: "${var.capi_version}"
   CAPOCI_VERSION: "${var.capoci_version}"
   CERT_MANAGER_VERSION: "${local.cert_manager_version}"
+  CERT_MANAGER_MANIFEST_URL: "${local.cert_manager_manifest_url}"
+  CAPI_MANIFEST_URL: "${local.capi_manifest_url}"
+  CAPOCI_MANIFEST_URL: "${local.capoci_manifest_url}"
   CAPI_PROVIDER_NAMESPACE: "oci-openshift-autoscaling-operator"
   CAPOCI_PROVIDER_NAMESPACE: "oci-openshift-autoscaling-operator"
   MANAGED_RESOURCE_NAMESPACE: "oci-openshift-autoscaling-operator"
@@ -68,7 +89,7 @@ spec:
       cpus: ${var.autoscaler_node_ocpus}
       memory: ${var.autoscaler_node_memory}
   clusterAutoscaler:
-    repositoryURL: https://kubernetes.github.io/autoscaler
+    repositoryURL: ${var.cluster_autoscaler_repository_url}
     name: oci-cluster-autoscaler
     serviceAccountName: oci-cluster-autoscaler
     cloudProvider: clusterapi
@@ -92,7 +113,7 @@ spec:
       serviceAccountName: oci-capi-operator-controller-manager
       containers:
       - name: provider-installer
-        image: quay.io/openshift/origin-cli:4.22
+        image: ${var.provider_installer_image}
         envFrom:
         - configMapRef:
             name: oci-capi-operator-config
@@ -101,14 +122,14 @@ spec:
         - -ec
         - |
           echo "Installing cert-manager $${CERT_MANAGER_VERSION}"
-          oc apply -f "https://github.com/cert-manager/cert-manager/releases/download/$${CERT_MANAGER_VERSION}/cert-manager.yaml"
+          oc apply -f "$${CERT_MANAGER_MANIFEST_URL}"
           oc wait --for=condition=Established crd/certificates.cert-manager.io --timeout=5m
           oc rollout status deployment/cert-manager -n cert-manager --timeout=5m
           oc rollout status deployment/cert-manager-cainjector -n cert-manager --timeout=5m
           oc rollout status deployment/cert-manager-webhook -n cert-manager --timeout=5m
 
           echo "Installing Cluster API $${CAPI_VERSION}"
-          curl -LfsS "https://github.com/kubernetes-sigs/cluster-api/releases/download/$${CAPI_VERSION}/core-components.yaml" -o /tmp/capi-core-components.yaml
+          curl -LfsS "$${CAPI_MANIFEST_URL}" -o /tmp/capi-core-components.yaml
           sed \
             -e 's|$${CAPI_DIAGNOSTICS_ADDRESS:=:8443}|:8443|g' \
             -e 's|$${CAPI_INSECURE_DIAGNOSTICS:=false}|false|g' \
@@ -154,7 +175,7 @@ spec:
           done
 
           echo "Installing Cluster API Provider OCI $${CAPOCI_VERSION}"
-          curl -LfsS "https://github.com/oracle/cluster-api-provider-oci/releases/download/$${CAPOCI_VERSION}/infrastructure-components.yaml" -o /tmp/capoci-infrastructure-components.yaml
+          curl -LfsS "$${CAPOCI_MANIFEST_URL}" -o /tmp/capoci-infrastructure-components.yaml
           sed \
             -e 's|$${K8S_CP_LABEL:=node-role.kubernetes.io/control-plane}|node-role.kubernetes.io/control-plane|g' \
             -e 's|$${EXP_MACHINE_POOL:=true}|true|g' \

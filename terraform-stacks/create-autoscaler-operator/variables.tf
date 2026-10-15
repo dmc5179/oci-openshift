@@ -116,3 +116,38 @@ variable "autoscaler_defined_tags_namespace" {
 }
 
 variable "region" { type = string }
+
+# -----------------------------------------------------------------------------
+# Autoscaler artifact sources (disconnected only)
+# -----------------------------------------------------------------------------
+# The provider-installer Job fetches three component manifests from github.com
+# and the operator pulls the cluster-autoscaler chart from a public Helm
+# repository. Neither is reachable from an enclave. Point these at an internal
+# source — for example the Object Storage PAR the create-cluster stack creates,
+# whose base URL it exposes as the autoscaler_artifacts_base_url output.
+#
+# Leave at the defaults for a connected install.
+
+variable "cert_manager_version" {
+  type        = string
+  description = "cert-manager version installed by the provider-installer Job. Must match the staged artifact filename."
+  default     = "v1.16.3"
+}
+
+variable "provider_artifacts_base_url" {
+  type        = string
+  description = "Base URL serving cert-manager-<ver>.yaml, cluster-api-<ver>.yaml and cluster-api-provider-oci-<ver>.yaml. Empty falls back to github.com."
+  default     = ""
+}
+
+variable "cluster_autoscaler_repository_url" {
+  type        = string
+  description = "Helm repository for the cluster-autoscaler chart. Helm appends /index.yaml."
+  default     = "https://kubernetes.github.io/autoscaler"
+}
+
+variable "provider_installer_image" {
+  type        = string
+  description = "Image for the provider-installer Job. Must be mirrored for disconnected installs."
+  default     = "quay.io/openshift/origin-cli:4.22"
+}

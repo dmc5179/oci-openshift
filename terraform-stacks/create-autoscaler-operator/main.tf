@@ -73,6 +73,12 @@ module "autoscaling_manifest" {
   cluster_network_cidr_block        = var.cluster_network_cidr_block
   service_network_cidr_block        = var.service_network_cidr_block
   autoscaler_defined_tags_namespace = var.autoscaler_defined_tags_namespace
+
+  // Artifact sources; default to the public URLs for connected installs.
+  cert_manager_version              = var.cert_manager_version
+  provider_artifacts_base_url       = var.provider_artifacts_base_url
+  cluster_autoscaler_repository_url = var.cluster_autoscaler_repository_url
+  provider_installer_image          = var.provider_installer_image
   bare_metal_subnet_id              = var.bare_metal_subnet_id
   bare_metal_subnet_name            = try(data.oci_core_subnet.existing_private_bare_metal[0].display_name, "")
   ocp_subnet_name                   = data.oci_core_subnet.existing_private_ocp.display_name

@@ -50,3 +50,26 @@ variable "autoscaler_pool_identifier" {
 variable "autoscaler_node_ocpus" { type = number }
 variable "autoscaler_node_memory" { type = number }
 variable "autoscaler_node_image_id" { type = string }
+
+# Autoscaler artifact sources. Mirrors the same inputs on the parent manifest
+# module. Empty base URL means the provider-installer Job fetches from
+# github.com, which only works on a connected cluster.
+variable "cert_manager_version" {
+  type    = string
+  default = "v1.16.3"
+}
+
+variable "provider_artifacts_base_url" {
+  type    = string
+  default = ""
+}
+
+variable "cluster_autoscaler_repository_url" {
+  type    = string
+  default = "https://kubernetes.github.io/autoscaler"
+}
+
+variable "provider_installer_image" {
+  type    = string
+  default = "quay.io/openshift/origin-cli:4.22"
+}
