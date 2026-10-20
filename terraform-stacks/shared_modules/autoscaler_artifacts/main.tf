@@ -78,6 +78,11 @@ resource "oci_objectstorage_preauthrequest" "artifacts" {
   access_type  = "AnyObjectRead"
   time_expires = timeadd(timestamp(), "${var.par_expiry_hours}h")
 
+  # The consumer only ever GETs known filenames, so deny enumeration. Without
+  # this an AnyObjectRead PAR permits listing the bucket, which is needless
+  # exposure on what is an unauthenticated bearer URL.
+  bucket_listing_action = "Deny"
+
   # Nothing orders the PAR after the uploads otherwise, and a consumer could
   # resolve the URL before the objects exist.
   depends_on = [oci_objectstorage_object.artifact]
