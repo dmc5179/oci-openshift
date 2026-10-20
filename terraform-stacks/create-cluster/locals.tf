@@ -30,12 +30,13 @@ locals {
 
   openshift_installer_version = var.set_openshift_installer_version ? var.openshift_installer_version : "latest"
 
-  # Derive the OCI realm domain from the instance metadata service (IMDS).
-  # IMDS is authoritative and works for every realm including restricted ones
-  # like OC6 that aren't in any hardcoded map. If IMDS is unavailable (running
-  # terraform from outside OCI), set var.realm_domain_component explicitly.
-  imds_realm_domain = try(jsondecode(module.meta.region_metadata)["realmDomainComponent"], "")
-  realm_domain      = var.realm_domain_component != "" ? var.realm_domain_component : local.imds_realm_domain
+  # The realm domain used to be derived here, from IMDS or an explicit
+  # override, purely to build Object Storage PAR URLs by hand. The provider's
+  # full_path attribute already returns a realm-correct URL, so that derivation
+  # is gone. var.realm_domain_component survives because the ocir module still
+  # uses it directly for the registry hostname — note OCIR's commercial default
+  # is ocir.io, not ocir.oraclecloud.com, so it cannot consume an IMDS realm
+  # domain unchanged.
 
   # how long resource creation will be paused to allow for newly created tagging resources to reach consistency
   wait_for_new_tag_consistency_wait_time = "30s"

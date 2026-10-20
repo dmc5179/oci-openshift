@@ -1,11 +1,8 @@
+# full_path is the provider's own fully-qualified PAR URL, correct in every
+# realm without us supplying a realm domain. An AnyObjectRead PAR returns a
+# path ending in /o/ ; trim it so callers can append "/<object>" cleanly.
 locals {
-  # AnyObjectRead access_uri ends at /o/ ; trim it so callers can append
-  # "/<object>" without doubling the separator.
-  par_base = format("https://objectstorage.%s.%s%s",
-    var.region,
-    var.realm_domain,
-    trimsuffix(oci_objectstorage_preauthrequest.artifacts.access_uri, "/")
-  )
+  par_base = trimsuffix(oci_objectstorage_preauthrequest.artifacts.full_path, "/")
 }
 
 output "provider_artifacts_base_url" {

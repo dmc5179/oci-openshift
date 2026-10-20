@@ -236,8 +236,6 @@ module "boot_artifacts" {
   cluster_name     = var.cluster_name
   rootfs_file_path = var.rootfs_file_path
   iso_file_path    = var.iso_file_path
-  region           = var.region
-  realm_domain     = local.realm_domain
   par_expiry_hours = var.rootfs_par_expiry_hours
   defined_tags     = module.resource_attribution_tags.openshift_resource_attribution_tag
 }
@@ -253,8 +251,6 @@ module "autoscaler_artifacts" {
 
   compartment_ocid = var.compartment_ocid
   cluster_name     = var.cluster_name
-  region           = var.region
-  realm_domain     = local.realm_domain
   par_expiry_hours = var.autoscaler_artifacts_par_expiry_hours
   defined_tags     = module.resource_attribution_tags.openshift_resource_attribution_tag
 

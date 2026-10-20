@@ -167,7 +167,7 @@ variable "region" {
 }
 
 variable "realm_domain_component" {
-  description = "OCI realm domain override. Normally auto-detected from IMDS when running on a bastion inside OCI. Only set this if running terraform from outside OCI (e.g. 'oraclegovcloud.com' for OC3, 'oraclecloud.eu' for OC19)."
+  description = "OCI realm domain used to build the OCIR registry hostname for the Oracle Cloud Agent, e.g. 'oraclegovcloud.com' for OC3. Leave empty for commercial OCI, which uses ocir.io. This no longer affects Object Storage PAR URLs — the provider returns those fully qualified and realm-correct on its own."
   type        = string
   default     = ""
 }

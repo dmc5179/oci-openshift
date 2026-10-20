@@ -6,15 +6,6 @@ variable "cluster_name" {
   type = string
 }
 
-variable "region" {
-  type = string
-}
-
-variable "realm_domain" {
-  type    = string
-  default = "oraclecloud.com"
-}
-
 variable "par_expiry_hours" {
   type    = number
   default = 168

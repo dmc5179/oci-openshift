@@ -31,11 +31,11 @@ resource "oci_objectstorage_object" "rootfs" {
 }
 
 resource "oci_objectstorage_preauthrequest" "rootfs" {
-  namespace   = data.oci_objectstorage_namespace.ns.namespace
-  bucket      = oci_objectstorage_bucket.boot_artifacts.name
-  name        = "${var.cluster_name}-rootfs-par"
-  access_type = "ObjectRead"
-  object_name = "agent.x86_64-rootfs.img"
+  namespace    = data.oci_objectstorage_namespace.ns.namespace
+  bucket       = oci_objectstorage_bucket.boot_artifacts.name
+  name         = "${var.cluster_name}-rootfs-par"
+  access_type  = "ObjectRead"
+  object_name  = "agent.x86_64-rootfs.img"
   time_expires = timeadd(timestamp(), "${var.par_expiry_hours}h")
 
   # The PAR carries no reference to the object it points at, so without this
@@ -58,11 +58,11 @@ resource "oci_objectstorage_object" "iso" {
 }
 
 resource "oci_objectstorage_preauthrequest" "iso" {
-  namespace   = data.oci_objectstorage_namespace.ns.namespace
-  bucket      = oci_objectstorage_bucket.boot_artifacts.name
-  name        = "${var.cluster_name}-iso-par"
-  access_type = "ObjectRead"
-  object_name = "agent.x86_64.iso"
+  namespace    = data.oci_objectstorage_namespace.ns.namespace
+  bucket       = oci_objectstorage_bucket.boot_artifacts.name
+  name         = "${var.cluster_name}-iso-par"
+  access_type  = "ObjectRead"
+  object_name  = "agent.x86_64.iso"
   time_expires = timeadd(timestamp(), "${var.par_expiry_hours}h")
 
   # Without this the compute image import can consume iso_par_url before the
