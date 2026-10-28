@@ -2,7 +2,7 @@
 
 Seven steps to deploy OpenShift 4.22 on a fresh OCI environment using agent-based installation. Works for any realm (OC1, OC3, OC6, etc.) — the realm domain is auto-detected from IMDS on the bastion.
 
-**Prerequisites:** OCI API keys configured, `oci` CLI installed, `openshift-install` (or `openshift-install-fips`) available. For non-commercial realms (e.g., OC6), ensure `~/.oci/regions-config.json` is configured so the OCI CLI can reach the correct endpoints.
+**Prerequisites:** OCI API keys configured, `oci` CLI installed, `openshift-install` (or `openshift-install-fips`) available. For non-commercial realms (e.g., OC6), ensure `~/.oci/regions-config.json` is configured so the OCI CLI can reach the correct endpoints. On a bastion with no internet access, `terraform init` cannot download providers; set up a provider mirror first as described in [terraform-offline-init.md](terraform-offline-init.md).
 
 ---
 

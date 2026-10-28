@@ -21,7 +21,7 @@
 #            bucket and the boot artifact PARs. No compute instances yet.
 #
 #              cd oci-openshift-mine/terraform-stacks/create-cluster
-#              terraform init
+#              terraform init   # air-gapped: see docs/terraform-offline-init.md
 #              terraform apply -var-file=../../openshift-on-oci.tfvars \
 #                -var='create_openshift_instances=false'
 #

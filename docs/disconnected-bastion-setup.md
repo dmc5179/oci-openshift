@@ -73,6 +73,7 @@ from the OpenShift mirror or your disconnected mirror registry.
 | FIPS mode enabled | `fips-mode-setup --check` → "FIPS mode is enabled." |
 | SELinux enforcing | `getenforce` → "Enforcing" |
 | Terraform installed | `terraform version` |
+| Terraform providers mirrored and `~/.terraformrc` configured | `terraform init` succeeds with no network — see [terraform-offline-init.md](terraform-offline-init.md) |
 
 ## Complete bastion workflow
 
@@ -90,6 +91,9 @@ fips-mode-setup --check
 # Should report: "FIPS mode is enabled."
 
 # 4. First terraform apply (infrastructure only, no instances)
+#    On an air-gapped bastion, terraform init only works once the provider
+#    mirror, lock files and ~/.terraformrc are in place. See
+#    docs/terraform-offline-init.md before running this step.
 cd oci-openshift-mine/terraform-stacks/create-cluster
 terraform init
 terraform apply -var-file=../../openshift-on-oci.tfvars
