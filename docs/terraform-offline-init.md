@@ -38,7 +38,8 @@ The lock files written on the connected host fix that, and they do a second job
 that is easy to miss: **they are the only integrity check on the mirror.**
 Packages installed from a filesystem mirror are reported as `(unauthenticated)`.
 With the lock file present, Terraform verifies each package against the
-checksums the registry published, so a modified provider zip is rejected:
+checksums the registry published, so a provider package whose contents have
+been altered is rejected:
 
 ```
 Error while installing hashicorp/time v0.14.2: the current package for
@@ -46,7 +47,7 @@ registry.terraform.io/hashicorp/time 0.14.2 doesn't match any of the
 checksums previously recorded in the dependency lock file
 ```
 
-Without the lock file, the same modified zip installs silently and `init`
+Without the lock file, the same altered package installs silently and `init`
 reports success. Always carry the lock files across with the mirror.
 
 ## On the connected host
@@ -251,3 +252,24 @@ Do not use `terraform init -upgrade` for this. `-upgrade` ignores the lock
 file and picks the newest version the constraint allows from whatever is in the
 mirror. With a single version mirrored it lands on the same answer, but if old
 and new packages are both present it silently overrides the pin.
+
+## Testing this procedure
+
+`scripts/test-offline-terraform-init.sh` runs everything above automatically.
+It builds the mirror on this host, then carries the repo, lock files, mirror and
+Terraform binary into a fresh UBI9 container started with `--network=none`, with
+nothing mounted, and checks that every stack initializes and validates offline.
+It also checks that a tampered provider and a missing provider both fail
+cleanly.
+
+The `.terraformrc` it uses is extracted from this file, so the test covers what
+the doc actually tells people to type. Run it after changing this doc, any
+stack's providers, or the repo layout:
+
+```bash
+./scripts/test-offline-terraform-init.sh            # working tree, incl. uncommitted edits
+./scripts/test-offline-terraform-init.sh --ref HEAD # a specific commit
+```
+
+It needs `podman`, `git`, `terraform` and `python3` on the host, and network
+access for the connected-host half. A full run takes under a minute.
