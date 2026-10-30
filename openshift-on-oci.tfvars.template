@@ -306,10 +306,13 @@ is_disconnected_installation = true
 # FIPS-enabled RHEL 9 bastion.
 enable_fips = false
 
-# Private registry mirror for disconnected installs. Set to the
-# hostname:port of your mirror registry (e.g. "registry.example.com:8443").
-# Adds imageDigestSources to install-config.yaml.
-# private_registry = ""
+# Private registry mirror for disconnected installs. Set to exactly the
+# destination you gave oc-mirror, without docker:// -- e.g. if you ran
+# 'oc-mirror ... docker://registry.example.com:8443', use the value below.
+# Include any namespace you mirrored under. Adds imageDigestSources to
+# install-config.yaml and generates an ImageTagMirrorSet; both assume
+# oc-mirror's layout beneath this path. See docs/imageset-config.yaml.
+# private_registry = "registry.example.com:8443"
 
 # PEM-encoded CA certificate for the private registry. Adds
 # additionalTrustBundle to install-config.yaml.

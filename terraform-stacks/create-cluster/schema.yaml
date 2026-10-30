@@ -213,7 +213,7 @@ variables:
   private_registry:
     type: string
     title: Private Registry Mirror
-    description: "Hostname:port of the private registry for disconnected installs (e.g. registry.example.com:8443). Adds imageDigestSources to install-config.yaml."
+    description: "The oc-mirror destination, without docker:// (e.g. registry.example.com:8443). Must equal the destination you mirrored to, including any namespace. Adds imageDigestSources to install-config.yaml and generates an ImageTagMirrorSet."
     default: ""
     required: false
     visible:

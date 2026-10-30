@@ -1,19 +1,83 @@
+# Example ImageSetConfiguration for mirroring OpenShift on OCI into a
+# disconnected registry.
+#
+# This covers the OpenShift release payload plus every image this repo's
+# manifests reference that the payload does not contain.
+#
+# Usage, roughly:
+#
+#   oc-mirror --v2 --config docs/imageset-config.yaml \
+#     --workspace file:///path/to/workspace \
+#     docker://registry.example.com:8443
+#
+# Set private_registry in your tfvars to exactly that destination, without
+# docker://. oc-mirror places the release at <destination>/openshift/release
+# and <destination>/openshift/release-images, and every other image at
+# <destination>/<its path minus the source registry>, for example
+# ghcr.io/oracle/foo -> <destination>/oracle/foo. The terraform stack builds
+# its imageDigestSources and ImageTagMirrorSet the same way from
+# private_registry, so the two only line up when they are equal. A
+# destination with a namespace such as docker://registry.example.com:8443/ocp
+# works too, as long as private_registry is registry.example.com:8443/ocp.
+#
+# For the fully-disconnected two-stage flow (mirror to disk on a connected
+# host, carry the disk across, then mirror to the registry) see the Red Hat
+# documentation on the oc-mirror plugin v2.
+#
+# Most images below are referenced by tag, not digest, so mirroring them is
+# not enough on its own: the cluster also needs ImageTagMirrorSet entries
+# redirecting each repository. With private_registry set, the create-cluster
+# stack generates those (output manifest_image_tag_mirror_set) for every
+# repository listed here. Keep this file and tag_mirrored_repos in
+# terraform-stacks/shared_modules/manifest/locals.tf in step: a redirect to a
+# repository that was never mirrored fails the same way as no redirect.
+#
+# Keeping this file honest
+# ------------------------
+# To see every image the repository's manifests reference:
+#
+#   git grep -hoE '^\s*-?\s*image: .*' -- custom_manifests/ terraform-stacks/ \
+#     | sed -E 's/^\s*-?\s*image: //' | tr -d '"' | sort -u
+#
+# Anything that prints and this file does not list is a gap.
+
 kind: ImageSetConfiguration
 apiVersion: mirror.openshift.io/v2alpha1
+# Split the mirror-to-disk output into archives of at most this many GiB, to
+# fit whatever media carries it into the enclave.
+archiveSize: 8
 mirror:
   platform:
     channels:
+      # Set both to the release you are installing. A range such as
+      # 4.22.0-4.22.99 mirrors every z-stream in it, which is far larger;
+      # widen it only when you need the upgrade path.
       - name: stable-4.22
         type: ocp
-        minVersion: 4.22.0
-        maxVersion: 4.22.99
+        minVersion: 4.22.18
+        maxVersion: 4.22.18
     graph: true
 
   additionalImages:
-    # OCI Cloud Controller Manager (CCM)
+    # ---------------------------------------------------------------------
+    # OCI Cloud Controller Manager. The CSI driver containers use the same
+    # image. This must match what the terraform stack deploys for your
+    # oci_driver_version: see oci_image_sources and default_oci_driver_image
+    # in terraform-stacks/shared_modules/manifest/locals.tf.
     - name: ghcr.io/nikhisin3001/cloud-provider-oci:v1.34.0
+    #
+    # The stack accepts only oci_driver_version = v1.34.0. The older versions
+    # under custom_manifests/oci-ccm-csi-drivers/ matter only if you apply
+    # those manifests by hand; mirror the matching image instead:
+    #
+    #   v1.33.1      ghcr.io/oracle/cloud-provider-oci:v1.33.1
+    #   v1.32.2      ghcr.io/oracle/cloud-provider-oci:v1.32.2
+    #   v1.32.0      ghcr.io/oracle/cloud-provider-oci:v1.32.0
+    #   v1.32.0-UHP  ghcr.io/dfoster-oracle/cloud-provider-oci-amd64:v1.32.0-UHP-LA
+    #   v1.30.0      ghcr.io/oracle/cloud-provider-oci:v1.30.0
 
-    # OCI CSI driver sidecar images
+    # ---------------------------------------------------------------------
+    # OCI CSI driver sidecars
     - name: registry.k8s.io/sig-storage/csi-provisioner:v5.0.1
     - name: registry.k8s.io/sig-storage/csi-attacher:v4.6.1
     - name: registry.k8s.io/sig-storage/csi-resizer:v1.11.1
@@ -21,18 +85,67 @@ mirror:
     - name: registry.k8s.io/sig-storage/csi-snapshotter:v6.3.0
     - name: registry.k8s.io/sig-storage/snapshot-controller:v6.3.0
 
-    # OpenShift CLI used as init container in CCM DaemonSet
+    # ---------------------------------------------------------------------
+    # OpenShift CLI, used as an init container in the CCM DaemonSet and by
+    # the autoscaling operator.
     - name: quay.io/openshift/origin-cli:4.22
 
-    # OCI OpenShift Autoscaler (optional — include if using autoscaler)
+    # ---------------------------------------------------------------------
+    # Autoscaler. Only needed with use_autoscaling_operator = true.
     - name: ghcr.io/oracle-samples/openshift-oracle-capi-autoscaling:latest
 
-    # Oracle Cloud Agent (optional — not available in Gov Cloud)
-    # Pull URL is tenancy-specific from OCIR, e.g.:
+    # Components the autoscaler's provider-installer Job pulls in. Versions
+    # must track cert_manager_version, capi_version and capoci_version in
+    # terraform-stacks/shared_modules/manifest/variables.tf.
+    - name: quay.io/jetstack/cert-manager-controller:v1.16.3
+    - name: quay.io/jetstack/cert-manager-cainjector:v1.16.3
+    - name: quay.io/jetstack/cert-manager-webhook:v1.16.3
+    - name: registry.k8s.io/cluster-api/cluster-api-controller:v1.14.0
+    - name: ghcr.io/oracle/cluster-api-oci-controller:v0.24.0
+
+    # Rendered by the cluster-autoscaler Helm chart (9.40.0, appVersion
+    # 1.31.0) that the operator installs. This is the chart's default image;
+    # whether the operator overrides it is an open question with Oracle.
+    - name: registry.k8s.io/autoscaling/cluster-autoscaler:v1.31.0
+
+    # ---------------------------------------------------------------------
+    # Troubleshooting images. No manifest references them, so nothing pulls
+    # them during install, but without them the tools you reach for when an
+    # enclave install goes wrong do not work.
+    #
+    # support-tools backs 'oc debug node/...'.
+    - name: registry.redhat.io/rhel9/support-tools:latest
+    # 'oc adm must-gather' with no arguments resolves its image from the
+    # release payload, which the platform section above already mirrors.
+    # This tag is for explicit --image use, and for clusters not healthy
+    # enough to resolve their own payload.
+    - name: registry.redhat.io/openshift4/ose-must-gather:latest
+    # Base images, for ad-hoc debug pods and for building anything inside
+    # the enclave.
+    - name: registry.access.redhat.com/ubi9/ubi:latest
+    - name: registry.access.redhat.com/ubi8/ubi:latest
+
+    # ---------------------------------------------------------------------
+    # Optional images whose names depend on your environment.
+    #
+    # Oracle Cloud Agent. The pull URL is tenancy-specific, from OCIR, and
+    # matches the oca_image_pull_link passed to terraform. Not available in
+    # every realm.
     # - name: <region>.ocir.io/<namespace>/<repo>:<version>
+    #
+    # The deployer container from container-deployer.md, if you built one
+    # and want to run it inside the enclave.
+    # - name: <registry>/<namespace>/oci-openshift-deployer:<tag>
+    #
+    # OCI Vault provider for the Secrets Store CSI driver; see operators
+    # below. Its Helm chart is served from oracle.github.io, so installing it
+    # in an enclave also needs the chart carried in separately.
+    # - name: ghcr.io/oracle/oci-secrets-store-csi-driver-provider:v0.5.1
 
   operators:
     - catalog: registry.redhat.io/redhat/redhat-operator-index:v4.22
       packages:
-        # Integrates with OCI Vault for mounting secrets as volumes
+        # Secrets Store CSI driver. On its own this provides the driver, not
+        # OCI Vault access: that also needs Oracle's provider image, listed
+        # (commented out) above.
         - name: secrets-store-csi-driver-operator

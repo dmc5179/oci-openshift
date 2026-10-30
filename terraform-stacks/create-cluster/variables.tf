@@ -86,7 +86,7 @@ variable "enable_fips" {
 
 variable "private_registry" {
   type        = string
-  description = "Hostname and optional port of the private registry mirror for disconnected installations (e.g. 'registry.example.com:8443'). When non-empty, imageDigestSources entries are added to install-config.yaml mapping quay.io release sources to this registry."
+  description = "The oc-mirror destination for disconnected installations, without docker:// (e.g. 'registry.example.com:8443', or 'registry.example.com:8443/ocp' if you mirrored under a namespace). Must equal the oc-mirror destination exactly: the generated imageDigestSources and ImageTagMirrorSet assume oc-mirror's layout beneath it. When non-empty, both are generated."
   default     = ""
 }
 

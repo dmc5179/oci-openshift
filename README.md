@@ -73,6 +73,18 @@ Follow the installation instructions for your preferred method:
   - [**Terraform Provisioning**](https://docs.oracle.com/en-us/iaas/Content/openshift-on-oci/agent-installer-using-stack.htm) - For connected environments.
   - [**Manual Provisioning**](https://docs.oracle.com/en-us/iaas/Content/openshift-on-oci/installing-agent.htm) - For disconnected or air-gapped environments.
 
+#### Disconnected installs and isolated realms with Terraform
+
+The Terraform stacks can also provision disconnected clusters and clusters in
+non-commercial realms:
+
+- [Setting up a connected RHEL 9 bastion](docs/bastion-setup.md)
+- [What to bring into a disconnected enclave](docs/disconnected-prerequisites.md)
+- [Running Terraform on a disconnected bastion](docs/terraform-offline-init.md)
+- [Disconnected bastion workflow: agent ISO to running cluster](docs/disconnected-bastion-setup.md)
+- [Example ImageSetConfiguration for oc-mirror](docs/imageset-config.yaml)
+- [Quick start for isolated realms such as OC6](docs/oc6-quickstart.md)
+
 ### Post-Installation
 
  Verify that your cluster is installed and running smoothly. For instructions see the following Red Hat documentation:
