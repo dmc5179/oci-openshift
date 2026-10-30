@@ -18,6 +18,20 @@ item links to where it is covered in detail.
 | OCI region metadata (non-commercial realms) | Prepared by you | [OCI realm settings](#oci-realm-settings) |
 | Resource attribution tags in the tenancy | `create-resource-attribution-tags` stack | [OCI prerequisites](#oci-prerequisites) |
 
+Two scripts check, from a connected host, that all of this can actually be
+fetched. Run them before you plan a transfer, and again after changing the
+imageset, the stacks' providers, or the image versions in the manifests:
+
+| Script | Proves |
+|---|---|
+| `scripts/test-offline-terraform-init.sh` | Terraform, the providers, the repo and (with `--openshift-clients`) the OpenShift clients can be bundled, then installed and initialized in a UBI9 container with no network |
+| `scripts/test-mirror-images.sh --authfile <pull-secret>` | Every image in `imageset-config.yaml` can be pulled with `oc-mirror`, and lands at the path the create-cluster stack will redirect the cluster to |
+
+`test-mirror-images.sh` mirrors the additional images for real into a
+throwaway local registry, because an `oc-mirror --dry-run` reports success even
+for a tag that does not exist. The release payload is resolved but not
+downloaded unless you pass `--full`.
+
 Nothing else needs to be carried in by hand. In particular:
 
 - **No web server is needed for the rootfs.** With
@@ -98,13 +112,69 @@ CA that is not in the public trust set. Three things then need that CA:
 
 ## OCI realm settings
 
-For a realm or region the SDKs do not know about, the OCI CLI needs
-`~/.oci/regions-config.json` describing it, and the cluster drivers need the
-same information as region metadata. The create-cluster stack reads it from the
-bastion's instance metadata and passes it to the CCM and CSI driver. For realms
-that construct service endpoints differently from commercial OCI, also set
-`enable_realm_specific_endpoints = true`. [oc6-quickstart.md](oc6-quickstart.md)
-walks through an isolated-realm deployment.
+The OCI SDKs know the commercial and government realms they shipped with. For
+a realm or region newer than the SDK, every OCI client on the bastion has to be
+told about it. That means the OCI CLI and Terraform's OCI provider; the cluster
+is handled separately, below.
+
+Each region is described by four values:
+
+| Key | Example | Meaning |
+|---|---|---|
+| `realmKey` | `oc99` | The realm's identifier |
+| `realmDomainComponent` | `example-realm.com` | The domain that service endpoints are built on |
+| `regionKey` | `ABC` | The region's short key |
+| `regionIdentifier` | `us-example-1` | The region name you use as `region` |
+
+An OCI instance can report its own values:
+
+```bash
+curl -s -H "Authorization: Bearer Oracle" http://169.254.169.254/opc/v2/instance/regionInfo
+```
+
+Give them to the clients in either of two ways. Both the Go SDK (Terraform's
+provider) and the Python SDK (the OCI CLI) read both.
+
+**`~/.oci/regions-config.json`**, a JSON *array*, one entry per region:
+
+```json
+[
+  {
+    "realmKey": "oc99",
+    "realmDomainComponent": "example-realm.com",
+    "regionKey": "ABC",
+    "regionIdentifier": "us-example-1"
+  }
+]
+```
+
+**`OCI_REGION_METADATA`**, a single JSON *object* for one region:
+
+```bash
+export OCI_REGION_METADATA='{"realmKey":"oc99","realmDomainComponent":"example-realm.com","regionKey":"ABC","regionIdentifier":"us-example-1"}'
+```
+
+Note the shape difference: the file holds a list and the variable holds one
+object. Terraform's provider (the Go SDK) accepts only those shapes; the OCI
+CLI is more lenient with the file. Use the shapes shown and both work.
+
+Related settings, all read by the Go SDK:
+
+| Variable | Purpose |
+|---|---|
+| `OCI_DEFAULT_REALM` | Domain to assume for a region the SDK cannot place in any realm |
+| `OCI_REALM_SPECIFIC_SERVICE_ENDPOINT_TEMPLATE_ENABLED` | Build service endpoints with the realm-specific templates some realms require |
+| `OCI_SDK_AUTH_CLIENT_REGION_URL` | Identity endpoint for instance principal authentication in a custom realm |
+| `OCI_DEFAULT_CERTS_PATH` | CA bundle for API endpoints with a private CA (the OCI CLI uses `OCI_CLI_CERT_BUNDLE` instead; see above) |
+
+**The cluster.** The CCM and CSI driver need the same region metadata. The
+create-cluster stack reads it from the bastion's instance metadata, using the
+request shown above, and passes it to both drivers as `OCI_REGION_METADATA`.
+For realms that build service endpoints differently from commercial OCI, also
+set `enable_realm_specific_endpoints = true`, which sets
+`OCI_REALM_SPECIFIC_SERVICE_ENDPOINT_TEMPLATE_ENABLED` on both drivers.
+[oc6-quickstart.md](oc6-quickstart.md) walks through an isolated-realm
+deployment.
 
 ## OCI prerequisites
 

@@ -40,6 +40,10 @@
 #     | sed -E 's/^\s*-?\s*image: //' | tr -d '"' | sort -u
 #
 # Anything that prints and this file does not list is a gap.
+#
+# scripts/test-mirror-images.sh checks the rest: that every image here can be
+# pulled, and that every repository the stack's ImageTagMirrorSet redirects
+# is one this file mirrors.
 
 kind: ImageSetConfiguration
 apiVersion: mirror.openshift.io/v2alpha1
@@ -132,10 +136,6 @@ mirror:
     # matches the oca_image_pull_link passed to terraform. Not available in
     # every realm.
     # - name: <region>.ocir.io/<namespace>/<repo>:<version>
-    #
-    # The deployer container from container-deployer.md, if you built one
-    # and want to run it inside the enclave.
-    # - name: <registry>/<namespace>/oci-openshift-deployer:<tag>
     #
     # OCI Vault provider for the Secrets Store CSI driver; see operators
     # below. Its Helm chart is served from oracle.github.io, so installing it

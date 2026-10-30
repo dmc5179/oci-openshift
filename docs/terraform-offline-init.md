@@ -204,14 +204,6 @@ and picks the newest version the constraint allows from whatever is in the
 mirror. With a single version mirrored it lands on the same answer, but if old
 and new packages are both present it silently overrides the pin.
 
-## Alternative: the deployer container
-
-[container-deployer.md](../container-deployer.md) describes an image with the
-providers already installed in each stack, built on a connected host. If you can
-move a container image to the bastion, it sidesteps this procedure. The same
-pinning caveat applies: the image contains whatever provider versions were
-current when it was built.
-
 ## Testing this procedure
 
 `scripts/test-offline-terraform-init.sh` runs the whole workflow. It runs the
