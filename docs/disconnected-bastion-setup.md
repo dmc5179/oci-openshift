@@ -56,15 +56,20 @@ rootfs_file_path             = "/home/cloud-user/<cluster>-agentBasedInstallatio
 |---------|---------|
 | `tar` | Extract OpenShift client and installer tarballs |
 
-### Binaries (pre-staged from a connected host or mirror)
+### Binaries and Terraform providers
 
 | Binary | Purpose |
 |--------|---------|
+| `terraform` | Runs the stacks in this repo |
 | `openshift-install-fips` | Agent-based installer (FIPS build for RHEL 9) |
 | `oc` | OpenShift CLI |
 
-For FIPS-enabled deployments, use the RHEL 9 FIPS-specific installer binary
-from the OpenShift mirror or your disconnected mirror registry.
+All of these come from the offline bundle described in
+[terraform-offline-init.md](terraform-offline-init.md). Build it on a connected
+host with `scripts/build-offline-bundle.sh --openshift-clients`; the
+`--openshift-clients` option adds `oc`, `oc-mirror` and
+`openshift-install-fips`. The plain `openshift-install` cannot install a cluster
+with `fips: true`.
 
 ### System requirements
 
@@ -72,30 +77,27 @@ from the OpenShift mirror or your disconnected mirror registry.
 |-------------|---------------|
 | FIPS mode enabled | `fips-mode-setup --check` → "FIPS mode is enabled." |
 | SELinux enforcing | `getenforce` → "Enforcing" |
-| Terraform installed | `terraform version` |
-| Terraform providers mirrored and `~/.terraformrc` configured | `terraform init` succeeds with no network — see [terraform-offline-init.md](terraform-offline-init.md) |
+| Offline bundle installed | `terraform version` and `openshift-install-fips version` both work |
 
 ## Complete bastion workflow
 
 ```bash
-# 1. Install packages
-sudo dnf -y install tar
+# 1. Unpack the offline bundle and install it. Run this as the user who will
+#    run terraform, not with sudo: it writes that user's ~/.terraformrc.
+#    Binaries go to ~/.local/bin. See docs/terraform-offline-init.md.
+tar -xzf oci-openshift-offline.tgz
+./oci-openshift-offline/oci-openshift/scripts/install-offline-bundle.sh
 
-# 2. Pre-stage OpenShift binaries (copied from a connected host or mirror)
-sudo cp openshift-install-fips /usr/local/bin/
-sudo cp oc /usr/local/bin/
-sudo chmod +x /usr/local/bin/openshift-install-fips /usr/local/bin/oc
+# 2. Work from the repo copy inside the bundle. Put your tfvars at its root.
+cp openshift-on-oci.tfvars oci-openshift-offline/oci-openshift/
 
 # 3. Verify FIPS mode
 fips-mode-setup --check
 # Should report: "FIPS mode is enabled."
 
 # 4. First terraform apply (infrastructure only, no instances)
-#    On an air-gapped bastion, terraform init only works once the provider
-#    mirror, lock files and ~/.terraformrc are in place. See
-#    docs/terraform-offline-init.md before running this step.
-cd oci-openshift-mine/terraform-stacks/create-cluster
-terraform init
+#    terraform init has already been run by the install script.
+cd ~/oci-openshift-offline/oci-openshift/terraform-stacks/create-cluster
 terraform apply -var-file=../../openshift-on-oci.tfvars
 
 # 5. Capture Terraform outputs
@@ -120,7 +122,7 @@ cd ~/<cluster>-agentBasedInstallation
 openshift-install-fips agent create image
 
 # 8. Second terraform apply (create instances — uploads ISO + rootfs automatically)
-cd oci-openshift-mine/terraform-stacks/create-cluster
+cd ~/oci-openshift-offline/oci-openshift/terraform-stacks/create-cluster
 terraform apply -var-file=../../openshift-on-oci.tfvars \
   -var='create_openshift_instances=true' \
   -var="iso_file_path=$HOME/<cluster>-agentBasedInstallation/agent.x86_64.iso" \

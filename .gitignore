@@ -30,3 +30,7 @@ checksums/
 !*.tfvars.template
 *.tfstate
 *.tfstate.backup
+
+# Offline bundles written by scripts/build-offline-bundle.sh
+oci-openshift-offline/
+oci-openshift-offline.tgz
