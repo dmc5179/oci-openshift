@@ -110,7 +110,7 @@ terraform output -raw install_config  > ~/<cluster>-agentBasedInstallation/insta
 # YAML file — each manifest must be a separate file in openshift/.
 for m in manifest_oci_ccm manifest_oci_csi manifest_oci_ccm_config manifest_oci_csi_config \
          manifest_machineconfig_ccm manifest_machineconfig_csi manifest_machineconfig_device_path \
-         manifest_cluster_network manifest_machineconfig_eval_user_data manifest_machineconfig_bm_vlan_mtu; do
+         manifest_cluster_network manifest_machineconfig_eval_user_data; do
   terraform output -raw "$m" > ~/<cluster>-agentBasedInstallation/openshift/${m}.yaml
 done
 

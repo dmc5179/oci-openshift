@@ -54,10 +54,6 @@ output "manifest_machineconfig_eval_user_data" {
   value = module.manifests.manifest_machineconfig_eval_user_data
 }
 
-output "manifest_machineconfig_bm_vlan_mtu" {
-  value = module.manifests.manifest_machineconfig_bm_vlan_mtu
-}
-
 output "manifest_oca" {
   value = module.manifests.manifest_oca
 }

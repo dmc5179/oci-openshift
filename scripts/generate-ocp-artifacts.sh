@@ -45,7 +45,6 @@ REQUIRED_MANIFESTS=(
   manifest_machineconfig_device_path
   manifest_cluster_network
   manifest_machineconfig_eval_user_data
-  manifest_machineconfig_bm_vlan_mtu
 )
 
 # Emitted only under some configurations. Skipped without error when null.

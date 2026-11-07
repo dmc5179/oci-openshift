@@ -12,7 +12,7 @@ Seven steps to deploy OpenShift 4.22 on a fresh OCI environment using agent-base
 
 3. **Terraform pass 1 (infra only)** — `cd terraform-stacks/create-cluster && terraform init && terraform apply -var-file=../../openshift-on-oci.tfvars -var='create_openshift_instances=false'`. Creates VCN, subnets, LBs, DNS, Object Storage bucket, and PARs for both rootfs and ISO.
 
-4. **Extract manifests** — `./scripts/generate-ocp-artifacts.sh`. Writes `agent-config.yaml`, `install-config.yaml`, and all 10 OCI day-0 manifests (CCM, CSI, network) into the installer directory. **Do not skip this step.**
+4. **Extract manifests** — `./scripts/generate-ocp-artifacts.sh`. Writes `agent-config.yaml`, `install-config.yaml`, and all 9 required OCI day-0 manifests (CCM, CSI, network), plus the optional ones your settings enable, into the installer directory. **Do not skip this step.**
 
 5. **Create the agent ISO** — `cd ~/ocp-deployment-agentBasedInstallation && openshift-install agent create image --dir=.` (use `openshift-install-fips` for FIPS). Bakes OCI manifests into the ISO and produces rootfs in `boot-artifacts/`.
 

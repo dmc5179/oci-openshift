@@ -65,14 +65,21 @@ mirror:
   additionalImages:
     # ---------------------------------------------------------------------
     # OCI Cloud Controller Manager. The CSI driver containers use the same
-    # image. This must match what the terraform stack deploys for your
-    # oci_driver_version: see oci_image_sources and default_oci_driver_image
-    # in terraform-stacks/shared_modules/manifest/locals.tf.
-    - name: ghcr.io/nikhisin3001/cloud-provider-oci:v1.34.0
+    # image. Mirror the one matching your oci_driver_version, which should
+    # match your cluster's Kubernetes minor version. Listed: v1.35.0, for
+    # OpenShift 4.22 (Kubernetes 1.35). The stack accepts three versions:
     #
-    # The stack accepts only oci_driver_version = v1.34.0. The older versions
-    # under custom_manifests/oci-ccm-csi-drivers/ matter only if you apply
-    # those manifests by hand; mirror the matching image instead:
+    #   v1.34.0  ghcr.io/oracle/cloud-provider-oci:v1.34.0  (Kubernetes 1.34, OpenShift 4.21)
+    #   v1.35.0  ghcr.io/oracle/cloud-provider-oci:v1.35.0  (Kubernetes 1.35, OpenShift 4.22)
+    #   v1.36.0  ghcr.io/oracle/cloud-provider-oci:v1.36.0  (Kubernetes 1.36; the stack default)
+    #
+    # The stack's default is v1.36.0, so set oci_driver_version explicitly.
+    # Mirroring one version while the stack deploys another leaves the CCM
+    # unable to pull.
+    - name: ghcr.io/oracle/cloud-provider-oci:v1.35.0
+    #
+    # Older versions under custom_manifests/oci-ccm-csi-drivers/ matter only
+    # if you apply those manifests by hand; mirror the matching image instead:
     #
     #   v1.33.1      ghcr.io/oracle/cloud-provider-oci:v1.33.1
     #   v1.32.2      ghcr.io/oracle/cloud-provider-oci:v1.32.2

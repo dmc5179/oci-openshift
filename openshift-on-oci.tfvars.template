@@ -412,8 +412,12 @@ tag_namespace_compartment_ocid = ""
 # 14. OCI CCM / CSI Driver Version
 # -----------------------------------------------------------------------------
 
-# Version of the OCI Cloud Controller Manager and CSI drivers
-oci_driver_version = "v1.34.0"
+# Version of the OCI Cloud Controller Manager and CSI drivers. Match the
+# Kubernetes minor version of your OpenShift release: v1.35.0 for OpenShift
+# 4.22 (Kubernetes 1.35). The stack accepts v1.34.0, v1.35.0 and v1.36.0;
+# its default, v1.36.0, targets Kubernetes 1.36. For a disconnected install,
+# docs/imageset-config.yaml must mirror the same version's image.
+oci_driver_version = "v1.35.0"
 
 
 # -----------------------------------------------------------------------------
