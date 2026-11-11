@@ -27,6 +27,10 @@ output "dynamic_custom_manifest" {
     ${file("${path.module}/manifests/04-cluster-network.yml")}
     ${file("${path.module}/manifests/05-oci-eval-user-data.yml")}
     ${file("${path.module}/manifests/07-configure-bm-vlan-mtu.yml")}
+    %{if var.private_registry != ""}
+    ${trimspace(local.image_tag_mirror_set)}
+    ---
+    %{endif}
     %{if var.use_autoscaling_operator}
     ${file("${path.module}/manifests/08-autoscaling-operator.yml")}
     ${local.autoscaling_operator_runtime_manifest_configmap}
@@ -50,7 +54,7 @@ output "autoscaling_manifest" {
 }
 
 output "manifest_image_tag_mirror_set" {
-  description = "ImageTagMirrorSet redirecting tag-based image pulls to the private registry. Write to openshift/99-image-tag-mirror-set.yml before generating the agent ISO. Null when private_registry is unset."
+  description = "ImageTagMirrorSet redirecting tag-based image pulls to the private registry. Also included in dynamic_custom_manifest. Null when private_registry is unset."
   value       = var.private_registry == "" ? null : trimspace(local.image_tag_mirror_set)
 }
 
