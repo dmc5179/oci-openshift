@@ -100,35 +100,30 @@ fips-mode-setup --check
 cd ~/oci-openshift-offline/oci-openshift/terraform-stacks/create-cluster
 terraform apply -var-file=../../openshift-on-oci.tfvars
 
-# 5. Capture Terraform outputs
-mkdir -p ~/<cluster>-agentBasedInstallation/openshift
-terraform output -raw agent_config    > ~/<cluster>-agentBasedInstallation/agent-config.yaml
-terraform output -raw install_config  > ~/<cluster>-agentBasedInstallation/install-config.yaml
+# 5. Write agent-config.yaml, install-config.yaml and the OCI manifests to
+#    ~/<cluster>-agentBasedInstallation, and back that directory up to
+#    ~/<cluster>-agentBasedInstallation-backup. The script writes each manifest
+#    output to its own file in openshift/: the 9 required ones, plus the
+#    ImageTagMirrorSet, custom CA, Oracle Cloud Agent and autoscaler manifests
+#    when your settings enable them. It fails if a required one is missing.
+#    The installer would accept the same manifests as one multi-document file
+#    (terraform output -raw dynamic_custom_manifest > openshift/manifest.yaml);
+#    the script is used here because it checks that nothing is missing.
+cd ~/oci-openshift-offline/oci-openshift
+./scripts/generate-ocp-artifacts.sh <cluster> terraform-stacks/create-cluster
 
-# Write each OCI manifest as an individual file in the openshift/ directory.
-# The agent-based installer does not accept a single concatenated multi-document
-# YAML file — each manifest must be a separate file in openshift/.
-for m in manifest_oci_ccm manifest_oci_csi manifest_oci_ccm_config manifest_oci_csi_config \
-         manifest_machineconfig_ccm manifest_machineconfig_csi manifest_machineconfig_device_path \
-         manifest_cluster_network manifest_machineconfig_eval_user_data; do
-  terraform output -raw "$m" > ~/<cluster>-agentBasedInstallation/openshift/${m}.yaml
-done
-
-# 6. Backup
-cp -R ~/<cluster>-agentBasedInstallation ~/<cluster>-agentBasedInstallation-backup
-
-# 7. Create the agent ISO
+# 6. Create the agent ISO
 cd ~/<cluster>-agentBasedInstallation
 openshift-install-fips agent create image
 
-# 8. Second terraform apply (create instances — uploads ISO + rootfs automatically)
+# 7. Second terraform apply (create instances — uploads ISO + rootfs automatically)
 cd ~/oci-openshift-offline/oci-openshift/terraform-stacks/create-cluster
 terraform apply -var-file=../../openshift-on-oci.tfvars \
   -var='create_openshift_instances=true' \
   -var="iso_file_path=$HOME/<cluster>-agentBasedInstallation/agent.x86_64.iso" \
   -var="rootfs_file_path=$HOME/<cluster>-agentBasedInstallation/boot-artifacts/agent.x86_64-rootfs.img"
 
-# 9. Monitor installation
+# 8. Monitor installation
 openshift-install-fips agent wait-for install-complete \
   --dir ~/<cluster>-agentBasedInstallation
 ```

@@ -27,7 +27,7 @@ Previously, the `oci_ccm_config` output from the OCI Resource Manager Stack (RMS
 
 ### Individual Manifest Outputs (Agent-based Installer)
 ---
-The `create-cluster` stack provides individual terraform outputs for each manifest, suitable for the agent-based installer's `openshift/` directory (which requires one manifest per file). Write them to disk with:
+The `create-cluster` stack provides an individual terraform output for each manifest. Written one per file into the agent-based installer's `openshift/` directory, they are equivalent to the `dynamic_custom_manifest` output below. `scripts/generate-ocp-artifacts.sh` writes all of them, skipping the optional ones your settings leave null, and fails if a required one is missing. To do it by hand:
 
 ```bash
 mkdir -p openshift
@@ -35,6 +35,11 @@ for m in manifest_oci_ccm manifest_oci_csi manifest_oci_ccm_config manifest_oci_
          manifest_machineconfig_ccm manifest_machineconfig_csi manifest_machineconfig_device_path \
          manifest_cluster_network manifest_machineconfig_eval_user_data; do
   terraform output -raw "$m" > "openshift/${m}.yaml"
+done
+# Optional: null unless enabled, in which case terraform output -raw fails.
+for m in manifest_image_tag_mirror_set manifest_oci_custom_ca manifest_oca \
+         manifest_autoscaler_operator manifest_autoscaler_runtime_configmap; do
+  terraform output -raw "$m" > "openshift/${m}.yaml" 2>/dev/null || rm -f "openshift/${m}.yaml"
 done
 ```
 
@@ -52,10 +57,14 @@ done
 | `manifest_oca` | Oracle Cloud Agent (null when `use_oracle_cloud_agent = false`) |
 | `manifest_autoscaler_operator` | Autoscaler operator bootstrap (null when `use_autoscaling_operator = false`) |
 | `manifest_autoscaler_runtime_configmap` | Autoscaler runtime manifest ConfigMap (null when `use_autoscaling_operator = false`) |
+| `manifest_image_tag_mirror_set` | ImageTagMirrorSet redirecting tag-based pulls to the mirror (null when `private_registry` is unset) |
+| `manifest_oci_custom_ca` | ConfigMaps carrying `additional_trust_bundle` into the CCM and CSI namespaces (null when `additional_trust_bundle` is unset) |
 
-### Dynamic Custom Manifest Output (legacy)
+### Dynamic Custom Manifest Output
 ---
-The `dynamic_custom_manifest` output is still available for backward compatibility. It contains all required manifests concatenated into a single multi-document YAML string. This format works with the Assisted Installer and `oc apply -f` but is **not compatible** with the agent-based installer's `openshift/` directory, which requires individual files.
+The `dynamic_custom_manifest` output contains the required manifests, plus the custom CA ConfigMaps, the ImageTagMirrorSet, and the Oracle Cloud Agent and autoscaler manifests when enabled, concatenated into one multi-document YAML string. It works with the Assisted Installer, with `oc apply -f`, and with the agent-based installer: saved as a single file in `openshift/`, it is split into separate manifests when the ISO is built (verified with `openshift-install` 4.22.18, 28 manifests). This is what Oracle's and Red Hat's documentation describe.
+
+Write it with `terraform output -raw dynamic_custom_manifest > openshift/manifest.yaml`. Without `-raw`, Terraform wraps the value in `<<EOT ... EOT` and the installer fails with `could not decode YAML ... Error reading multiple YAMLs`.
 
 ### Autoscaler Manifest Output
 ---

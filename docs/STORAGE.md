@@ -79,10 +79,10 @@ Review the Block Volume documentation below for more information:
 
 ### Prerequisites
 
-If you are using our Terraform to provision cluster resources and generate the individual manifest outputs (or the legacy `dynamic_custom_manifest` output), there are no extra steps required. Move on to [Deployment](#Deployment) or view [Examples](#examples).
+If you are using our Terraform to provision cluster resources and generate the individual manifest outputs (or the combined `dynamic_custom_manifest` output), there are no extra steps required. Move on to [Deployment](#Deployment) or view [Examples](#examples).
 
 Consider the following if you are not using Terraform or for general debugging:
-1. The Secrets in [01-oci-driver-configs.yml](/custom_manifests/manifests/01-oci-driver-configs.yml), `oci-volume-provisioner` and `oci-cloud-controller-manager` allow the CSI and CCM drivers to interact with and create resources for your cluster. They initially contain placeholder values and must be configured before use. If using our Terraform to provision cluster resources, the `manifest_oci_ccm_config` and `manifest_oci_csi_config` outputs (or the legacy `dynamic_custom_manifest` output) include these Secrets already configured. If you are manually provisioning OCI resources, you must update the Secret with the necessary values yourself. View provider config examples [here](https://github.com/oracle/oci-cloud-controller-manager/blob/master/manifests/provider-config-instance-principals-example.yaml).
+1. The Secrets in [01-oci-driver-configs.yml](/custom_manifests/manifests/01-oci-driver-configs.yml), `oci-volume-provisioner` and `oci-cloud-controller-manager` allow the CSI and CCM drivers to interact with and create resources for your cluster. They initially contain placeholder values and must be configured before use. If using our Terraform to provision cluster resources, the `manifest_oci_ccm_config` and `manifest_oci_csi_config` outputs (or the combined `dynamic_custom_manifest` output) include these Secrets already configured. If you are manually provisioning OCI resources, you must update the Secret with the necessary values yourself. View provider config examples [here](https://github.com/oracle/oci-cloud-controller-manager/blob/master/manifests/provider-config-instance-principals-example.yaml).
 
 2. To allow the CSI driver to operate on the OCI resources for your cluster, IAM Policies must be created in your tenancy which give access to a Dynamic Group comprised of the instances on which the CSI components are deployed. If you are using our Terraform to provision resources, the necessary [Dynamic Groups](/terraform-stacks/shared_modules/iam/dynamic_group.tf) and [Policies](/terraform-stacks/shared_modules/iam/policy.tf) are created for you.
 
@@ -97,7 +97,7 @@ Read more about these OCI IAM resources below:
 
 The manifests containing the OCI CSI driver are typically applied to an OpenShift cluster during installation via [custom_manifests](/custom_manifests/manifests/01-oci-csi.yml) supplied by you during setup.
 
-If you are using our Terraform to provision cluster resources, use the individual manifest outputs to write each manifest as a separate file into the `openshift/` directory before creating the agent ISO. For the Assisted Installer, the legacy `dynamic_custom_manifest` output (a single concatenated file) can also be used. Set the `oci_driver_version` variable to the driver version matching your cluster's Kubernetes minor version: `v1.35.0` for OpenShift 4.22. The default is `v1.36.0`, using the image `ghcr.io/oracle/cloud-provider-oci:v1.36.0`.
+If you are using our Terraform to provision cluster resources, write the manifests into the `openshift/` directory before creating the agent ISO, either as the individual manifest outputs (`scripts/generate-ocp-artifacts.sh` writes them) or as the `dynamic_custom_manifest` output saved to one file with `terraform output -raw`. The two carry the same manifests; see [custom_manifests/README.md](/custom_manifests/README.md). Set the `oci_driver_version` variable to the driver version matching your cluster's Kubernetes minor version: `v1.35.0` for OpenShift 4.22. The default is `v1.36.0`, using the image `ghcr.io/oracle/cloud-provider-oci:v1.36.0`.
 
 For agent-based installations, write the manifests with:
 ```bash
