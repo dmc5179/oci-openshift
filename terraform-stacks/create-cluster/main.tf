@@ -288,6 +288,7 @@ module "manifests" {
   redhat_pull_secret      = var.redhat_pull_secret
   enable_fips             = var.enable_fips
   private_registry        = var.private_registry
+  mirror_source_policy    = var.mirror_source_policy
   additional_trust_bundle = var.additional_trust_bundle
   set_proxy               = var.set_proxy
   http_proxy              = var.http_proxy

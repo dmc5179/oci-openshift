@@ -314,6 +314,14 @@ enable_fips = false
 # oc-mirror's layout beneath this path. See docs/imageset-config.yaml.
 # private_registry = "registry.example.com:8443"
 
+# What a node does when a pull from the mirror fails. NeverContactSource adds
+# sourcePolicy to imageDigestSources and mirrorSourcePolicy to the generated
+# ImageTagMirrorSet, so every mirrored source is rendered blocked = true in
+# registries.conf and is never contacted. That guarantees a disconnected
+# install really pulls only from the mirror, and it fails loudly if an image
+# is missing. Leave unset for the OpenShift default (AllowContactingSource).
+# mirror_source_policy = "NeverContactSource"
+
 # PEM-encoded CA certificate for the private registry. Adds
 # additionalTrustBundle to install-config.yaml.
 #

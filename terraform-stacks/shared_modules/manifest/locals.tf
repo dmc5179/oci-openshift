@@ -54,7 +54,7 @@ locals {
 
   image_tag_mirror_entries = [
     for repo in local.tag_mirrored_repos :
-    "  - source: ${repo}\n    mirrors:\n    - ${var.private_registry}/${join("/", slice(split("/", repo), 1, length(split("/", repo))))}"
+    "  - source: ${repo}\n    mirrors:\n    - ${var.private_registry}/${join("/", slice(split("/", repo), 1, length(split("/", repo))))}${var.mirror_source_policy != "" ? "\n    mirrorSourcePolicy: ${var.mirror_source_policy}" : ""}"
   ]
 
   image_tag_mirror_set = var.private_registry == "" ? "" : <<EOT
@@ -474,9 +474,15 @@ imageDigestSources:
 - mirrors:
   - ${var.private_registry}/openshift/release
   source: quay.io/openshift-release-dev/ocp-v4.0-art-dev
+%{if var.mirror_source_policy != ""~}
+  sourcePolicy: ${var.mirror_source_policy}
+%{endif~}
 - mirrors:
   - ${var.private_registry}/openshift/release-images
   source: quay.io/openshift-release-dev/ocp-release
+%{if var.mirror_source_policy != ""~}
+  sourcePolicy: ${var.mirror_source_policy}
+%{endif~}
 MIRRORS
 ) : ""}
 sshKey: '${var.public_ssh_key}'
