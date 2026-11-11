@@ -15,6 +15,10 @@ output "dynamic_custom_manifest" {
     ${local.oci_csi}
     ${local.oci_ccm_config_secret}
     ${local.oci_csi_config_secret}
+    %{if local.custom_ca_enabled}
+    ${local.oci_custom_ca_configmaps}
+    ---
+    %{endif}
     %{if var.use_oracle_cloud_agent && var.oca_image_pull_link != "" && var.oca_image_pull_link != "no-image-found"}
     ${local.oca_yaml}
     %{endif}
@@ -23,6 +27,10 @@ output "dynamic_custom_manifest" {
     ${file("${path.module}/manifests/03-machineconfig-consistent-device-path.yml")}
     ${file("${path.module}/manifests/04-cluster-network.yml")}
     ${file("${path.module}/manifests/05-oci-eval-user-data.yml")}
+    %{if var.private_registry != ""}
+    ${trimspace(local.image_tag_mirror_set)}
+    ---
+    %{endif}
     %{if var.use_autoscaling_operator}
     ${file("${path.module}/manifests/08-autoscaling-operator.yml")}
     ${local.autoscaling_operator_runtime_manifest_configmap}
@@ -106,12 +114,12 @@ output "autoscaling_manifest" {
 }
 
 output "manifest_oci_custom_ca" {
-  description = "ConfigMaps carrying additional_trust_bundle into the oci-cloud-controller-manager and oci-csi namespaces, so the Oracle-image containers can verify TLS to the OCI API. Null when additional_trust_bundle is unset."
+  description = "ConfigMaps carrying additional_trust_bundle into the oci-cloud-controller-manager and oci-csi namespaces, so the Oracle-image containers can verify TLS to the OCI API. Also included in dynamic_custom_manifest. Null when additional_trust_bundle is unset."
   value       = var.additional_trust_bundle == "" ? null : trimspace(local.oci_custom_ca_configmaps)
 }
 
 output "manifest_image_tag_mirror_set" {
-  description = "ImageTagMirrorSet redirecting tag-based image pulls to the private registry. Write to openshift/99-image-tag-mirror-set.yml before generating the agent ISO. Null when private_registry is unset."
+  description = "ImageTagMirrorSet redirecting tag-based image pulls to the private registry. Also included in dynamic_custom_manifest. Null when private_registry is unset."
   value       = var.private_registry == "" ? null : trimspace(local.image_tag_mirror_set)
 }
 
