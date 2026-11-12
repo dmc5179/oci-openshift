@@ -55,6 +55,20 @@ resource "oci_core_instance" "control_plane_node" {
   instance_options {
     are_legacy_imds_endpoints_disabled = true
   }
+
+  lifecycle {
+    ignore_changes = [
+      # OCI has been seen to create boot volumes at 10 VPUs/GB regardless of the
+      # value requested here (OC3, provider 9.12.1, 2026-11-12) and not to report
+      # the requested value back. Without this, every plan forces replacement of
+      # all instances. Tracked separately; remove once OCI applies the value.
+      source_details[0].boot_volume_vpus_per_gb,
+      # Tenancy tag defaults (Oracle-Tags.CreatedBy/CreatedOn and any
+      # tenancy-specific ones) are added by OCI at creation. Removing them on
+      # every apply defers the VNIC lookups and replaces every LB backend.
+      defined_tags,
+    ]
+  }
 }
 
 # compute nodes
@@ -105,4 +119,18 @@ resource "oci_core_instance" "compute_node" {
     are_legacy_imds_endpoints_disabled = true
   }
 
+
+  lifecycle {
+    ignore_changes = [
+      # OCI has been seen to create boot volumes at 10 VPUs/GB regardless of the
+      # value requested here (OC3, provider 9.12.1, 2026-11-12) and not to report
+      # the requested value back. Without this, every plan forces replacement of
+      # all instances. Tracked separately; remove once OCI applies the value.
+      source_details[0].boot_volume_vpus_per_gb,
+      # Tenancy tag defaults (Oracle-Tags.CreatedBy/CreatedOn and any
+      # tenancy-specific ones) are added by OCI at creation. Removing them on
+      # every apply defers the VNIC lookups and replaces every LB backend.
+      defined_tags,
+    ]
+  }
 }
