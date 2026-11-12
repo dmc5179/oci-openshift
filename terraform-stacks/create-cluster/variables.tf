@@ -571,6 +571,16 @@ variable "private_registry" {
   default     = ""
 }
 
+variable "mirror_source_policy" {
+  type        = string
+  description = "Fallback policy for every mirrored source when private_registry is set: sourcePolicy on install-config imageDigestSources and mirrorSourcePolicy on the generated ImageTagMirrorSet. NeverContactSource makes nodes pull mirrored images only from the mirror, never from the public source (rendered as blocked = true in registries.conf). Empty leaves the OpenShift default, AllowContactingSource."
+  default     = ""
+  validation {
+    condition     = contains(["", "NeverContactSource", "AllowContactingSource"], var.mirror_source_policy)
+    error_message = "mirror_source_policy must be \"\", \"NeverContactSource\" or \"AllowContactingSource\"."
+  }
+}
+
 variable "additional_trust_bundle" {
   type        = string
   description = "PEM-encoded CA bundle for the mirror registry. When set, additionalTrustBundle and additionalTrustBundlePolicy: Always are added to install-config.yaml. Cannot use file() in a .tfvars file; pass with -var or a heredoc."

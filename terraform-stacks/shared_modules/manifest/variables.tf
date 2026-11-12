@@ -205,6 +205,11 @@ variable "private_registry" {
   default = ""
 }
 
+variable "mirror_source_policy" {
+  type    = string
+  default = ""
+}
+
 variable "additional_trust_bundle" {
   type    = string
   default = ""

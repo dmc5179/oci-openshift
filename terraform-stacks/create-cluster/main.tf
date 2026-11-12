@@ -280,6 +280,7 @@ module "manifests" {
 
   redhat_pull_secret           = var.redhat_pull_secret
   private_registry             = var.private_registry
+  mirror_source_policy         = var.mirror_source_policy
   additional_trust_bundle      = var.additional_trust_bundle
   is_disconnected_installation = var.is_disconnected_installation
   set_proxy                    = var.set_proxy
