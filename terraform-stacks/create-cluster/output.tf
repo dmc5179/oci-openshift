@@ -75,6 +75,10 @@ output "manifest_image_tag_mirror_set" {
   value = module.manifests.manifest_image_tag_mirror_set
 }
 
+output "manifest_machineconfig_chrony" {
+  value = module.manifests.manifest_machineconfig_chrony
+}
+
 output "manifest_oci_custom_ca" {
   value = module.manifests.manifest_oci_custom_ca
 }

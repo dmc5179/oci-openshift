@@ -45,6 +45,13 @@ Nothing else needs to be carried in by hand. In particular:
   redirecting every other image. Write the `manifest_image_tag_mirror_set`
   output into `openshift/` before creating the ISO;
   `scripts/generate-ocp-artifacts.sh` does this.
+- **Nodes use only your NTP sources.** On its own, `additionalNTPSources` leaves
+  the default public pool (`pool 0.rhel.pool.ntp.org`) in each node's
+  `chrony.conf`, so nodes keep polling public NTP servers whenever any egress
+  exists. With `is_disconnected_installation = true`, the stack also emits the
+  `manifest_machineconfig_chrony` MachineConfigs. They replace `chrony.conf`
+  with only `additional_ntp_sources` (default `169.254.169.254`, the OCI
+  metadata NTP service). `scripts/generate-ocp-artifacts.sh` writes them.
 - **No separate RHCOS download is needed.** The agent ISO is built from the
   release payload, so it comes from the mirrored release images.
 

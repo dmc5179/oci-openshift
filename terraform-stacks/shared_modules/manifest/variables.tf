@@ -243,3 +243,13 @@ variable "cert_manager_version" {
   type    = string
   default = "v1.16.3"
 }
+
+variable "installation_method" {
+  type    = string
+  default = "Assisted"
+}
+
+variable "is_disconnected_installation" {
+  type    = bool
+  default = false
+}

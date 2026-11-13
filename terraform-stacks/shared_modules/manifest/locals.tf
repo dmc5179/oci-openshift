@@ -432,6 +432,50 @@ ${var.boot_artifacts_base_url != "" ? "bootArtifactsBaseURL: ${var.boot_artifact
 ${length(var.additional_ntp_sources) > 0 ? "additionalNTPSources:\n${join("\n", formatlist("- %s", var.additional_ntp_sources))}" : ""}
   EOT
 
+  # Disconnected Agent-based installs only: replace chrony.conf so nodes use only
+  # additional_ntp_sources. The Agent-based Installer writes
+  # 50-<role>-chrony-configuration with the default public pool
+  # (pool 0.rhel.pool.ntp.org) next to additionalNTPSources, so nodes keep polling
+  # public NTP servers wherever egress exists. The 99- MachineConfigs below sort
+  # later and replace the file. Assisted Installer installs are left alone.
+  restrict_ntp_sources = var.installation_method == "Agent-based" && var.is_disconnected_installation && length(var.additional_ntp_sources) > 0
+
+  chrony_conf = join("\n", concat(
+    [
+      "# Written by the oci-openshift create-cluster stack for a disconnected Agent-based install.",
+      "# Only additional_ntp_sources are used; the default public NTP pool is removed.",
+    ],
+    [for source in var.additional_ntp_sources : "server ${source} iburst"],
+    [
+      "driftfile /var/lib/chrony/drift",
+      "makestep 1.0 3",
+      "rtcsync",
+      "logdir /var/log/chrony",
+      "",
+    ],
+  ))
+
+  chrony_machineconfigs = "${join("---\n", [for role in ["master", "worker"] : <<-MC
+    apiVersion: machineconfiguration.openshift.io/v1
+    kind: MachineConfig
+    metadata:
+      labels:
+        machineconfiguration.openshift.io/role: ${role}
+      name: 99-${role}-chrony-ntp-sources
+    spec:
+      config:
+        ignition:
+          version: 3.2.0
+        storage:
+          files:
+            - path: /etc/chrony.conf
+              mode: 420
+              overwrite: true
+              contents:
+                source: data:text/plain;charset=utf-8;base64,${base64encode(local.chrony_conf)}
+  MC
+  ])}---"
+
   install_config = <<EOT
 apiVersion: v1
 metadata:

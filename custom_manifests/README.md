@@ -37,7 +37,7 @@ for m in manifest_oci_ccm manifest_oci_csi manifest_oci_ccm_config manifest_oci_
   terraform output -raw "$m" > "openshift/${m}.yaml"
 done
 # Optional: null unless enabled, in which case terraform output -raw fails.
-for m in manifest_image_tag_mirror_set manifest_oci_custom_ca manifest_oca \
+for m in manifest_image_tag_mirror_set manifest_oci_custom_ca manifest_machineconfig_chrony manifest_oca \
          manifest_autoscaler_operator manifest_autoscaler_runtime_configmap; do
   terraform output -raw "$m" > "openshift/${m}.yaml" 2>/dev/null || rm -f "openshift/${m}.yaml"
 done
@@ -59,10 +59,11 @@ done
 | `manifest_autoscaler_runtime_configmap` | Autoscaler runtime manifest ConfigMap (null when `use_autoscaling_operator = false`) |
 | `manifest_image_tag_mirror_set` | ImageTagMirrorSet redirecting tag-based pulls to the mirror (null when `private_registry` is unset) |
 | `manifest_oci_custom_ca` | ConfigMaps carrying `additional_trust_bundle` into the CCM and CSI namespaces (null when `additional_trust_bundle` is unset) |
+| `manifest_machineconfig_chrony` | MachineConfigs (master and worker) replacing `/etc/chrony.conf` with only `additional_ntp_sources`, so nodes don't poll the default public NTP pool (null unless the install is Agent-based, `is_disconnected_installation = true` and `additional_ntp_sources` is non-empty) |
 
 ### Dynamic Custom Manifest Output
 ---
-The `dynamic_custom_manifest` output contains the required manifests, plus the custom CA ConfigMaps, the ImageTagMirrorSet, and the Oracle Cloud Agent and autoscaler manifests when enabled, concatenated into one multi-document YAML string. It works with the Assisted Installer, with `oc apply -f`, and with the agent-based installer: saved as a single file in `openshift/`, it is split into separate manifests when the ISO is built (verified with `openshift-install` 4.22.18, 28 manifests). This is what Oracle's and Red Hat's documentation describe.
+The `dynamic_custom_manifest` output contains the required manifests, plus the custom CA ConfigMaps, the ImageTagMirrorSet, the chrony MachineConfigs, and the Oracle Cloud Agent and autoscaler manifests when enabled, concatenated into one multi-document YAML string. It works with the Assisted Installer, with `oc apply -f`, and with the agent-based installer: saved as a single file in `openshift/`, it is split into separate manifests when the ISO is built (verified with `openshift-install` 4.22.18, 28 manifests). This is what Oracle's and Red Hat's documentation describe.
 
 Write it with `terraform output -raw dynamic_custom_manifest > openshift/manifest.yaml`. Without `-raw`, Terraform wraps the value in `<<EOT ... EOT` and the installer fails with `could not decode YAML ... Error reading multiple YAMLs`.
 

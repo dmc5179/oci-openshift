@@ -31,6 +31,9 @@ output "dynamic_custom_manifest" {
     ${trimspace(local.image_tag_mirror_set)}
     ---
     %{endif}
+    %{if local.restrict_ntp_sources}
+    ${local.chrony_machineconfigs}
+    %{endif}
     %{if var.use_autoscaling_operator}
     ${file("${path.module}/manifests/08-autoscaling-operator.yml")}
     ${local.autoscaling_operator_runtime_manifest_configmap}
@@ -121,6 +124,11 @@ output "manifest_oci_custom_ca" {
 output "manifest_image_tag_mirror_set" {
   description = "ImageTagMirrorSet redirecting tag-based image pulls to the private registry. Also included in dynamic_custom_manifest. Null when private_registry is unset."
   value       = var.private_registry == "" ? null : trimspace(local.image_tag_mirror_set)
+}
+
+output "manifest_machineconfig_chrony" {
+  description = "MachineConfigs (master and worker) that replace /etc/chrony.conf with only additional_ntp_sources, removing the default public NTP pool. Also included in dynamic_custom_manifest. Null unless installation_method is Agent-based, is_disconnected_installation is true and additional_ntp_sources is non-empty."
+  value       = local.restrict_ntp_sources ? local.chrony_machineconfigs : null
 }
 
 output "agent_config" {

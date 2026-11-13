@@ -315,7 +315,9 @@ module "manifests" {
   )
 
   // NTP
-  additional_ntp_sources = var.additional_ntp_sources
+  additional_ntp_sources       = var.additional_ntp_sources
+  installation_method          = var.installation_method
+  is_disconnected_installation = var.is_disconnected_installation
 
   // Dependency on ocir
   use_oracle_cloud_agent = var.use_oracle_cloud_agent

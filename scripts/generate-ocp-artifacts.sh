@@ -51,6 +51,7 @@ REQUIRED_MANIFESTS=(
 OPTIONAL_MANIFESTS=(
   manifest_image_tag_mirror_set
   manifest_oci_custom_ca
+  manifest_machineconfig_chrony
   manifest_oca
   manifest_autoscaler_operator
   manifest_autoscaler_runtime_configmap
