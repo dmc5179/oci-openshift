@@ -106,6 +106,8 @@ non-commercial realms:
  - [Verifying successful cluster installation for Assisted Installer](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/installing_on_oci/installing-oci-assisted-installer#verifying-cluster-install-ai-oci_installing-oci-assisted-installer)
  - [Verifying successful cluster installation for Agent-based Installer](https://docs.redhat.com/en/documentation/openshift_container_platform/4.17/html/installing_on_oci/installing-oci-assisted-installer#verifying-cluster-install-ai-oci_installing-oci-assisted-installer)
 
+ For Kubernetes `LoadBalancer` services, including the annotation that network load balancers need, see [docs/load-balancer-services.md](docs/load-balancer-services.md).
+
 
 ## Additional Documentation
 **Oracle Documentation**
