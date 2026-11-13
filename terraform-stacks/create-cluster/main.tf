@@ -292,6 +292,7 @@ module "manifests" {
   zone_dns               = var.zone_dns
   rendezvous_ip          = var.rendezvous_ip
   additional_ntp_sources = var.additional_ntp_sources
+  installation_method    = var.installation_method
   control_plane_count    = var.control_plane_count
   compute_count          = local.effective_compute_count
   public_ssh_key         = var.public_ssh_key

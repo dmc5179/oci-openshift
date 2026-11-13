@@ -199,3 +199,8 @@ variable "additional_ntp_sources" {
   type    = list(string)
   default = []
 }
+
+variable "installation_method" {
+  type    = string
+  default = "Assisted"
+}
